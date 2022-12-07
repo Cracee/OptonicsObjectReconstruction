@@ -26,7 +26,7 @@ from nxlib.constants import (
 from nxlib import NxLibCommand
 from util_functions import convert_to_open3d_point_cloud
 
-f = open("data/box_3_t_piece.json")
+f = open("data/t_piece.json")
 data = json.load(f)
 jsonString = json.dumps(data)
 
@@ -86,3 +86,5 @@ with NxLib(), Camera.from_serial(
     o3d.visualization.draw_geometries([point_cloud, bounding_box_a, bounding_box_crop])
 
     o3d.visualization.draw_geometries([cropped_pcd, bounding_box_crop])
+
+    # o3d.io.write_point_cloud("data/t_piece.pcd", cropped_pcd)
