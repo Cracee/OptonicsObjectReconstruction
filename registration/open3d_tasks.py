@@ -125,9 +125,15 @@ def cluster_objects(
     point_cloud, eps=2, min_size=50, print_progress=False, visualize=False
 ):
     """
-    Function, that takes a point_cloud and clusters it into elements.
-    :param point_cloud:
-    :return:
+    Function, that takes a point_cloud and clusters it into elements via the DBSCAN clustering algorithm. Result will
+    be colored by cluster.
+
+    :param point_cloud: open3d point cloud
+    :param eps: distances to neighbours (param of DBSCAN)
+    :param min_size: minimum size of a cluster (param of DBSCAN)
+    :param print_progress: show the progress_bar
+    :param visualize: visualize the resulting clusters
+    :return: cluster number, point cloud file, labels of the points
     """
     with o3d.utility.VerbosityContextManager(o3d.utility.VerbosityLevel.Debug):
         labels = np.array(
@@ -154,6 +160,13 @@ def cluster_objects(
 
 
 def cluster_trial(point_cloud):
+    """
+    An analysis run of the DBSCAN clustering algorithm on the point clouds of this project. Tries out different
+    parameters (eps and min_sizes) and prints out the time and found clusters.
+
+    :param point_cloud: open3D point cloud for clustering
+    :return:
+    """
     different_eps = [0.01, 0.1, 0.5, 1, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0]
     different_min_sizes = [*range(10, 110, 10)]
 
@@ -178,6 +191,14 @@ def cluster_trial(point_cloud):
 
 
 def split_point_cloud_by_clusters(point_cloud, save_clusters=""):
+    """
+    Function, that takes a point cloud and seperates the clusters (see cluster_object function) into unique files and
+    elements.
+
+    :param point_cloud: string or open3d point cloud - original point cloud
+    :param save_clusters: if string is given, then in this folder the clusters will be saved
+    :return: list of sorted clusters by size
+    """
     if isinstance(point_cloud, str):
         point_cloud = read_pcd_file(point_cloud, visualize=False)
 
@@ -193,7 +214,6 @@ def split_point_cloud_by_clusters(point_cloud, save_clusters=""):
         point_clouds_clustered.append(point_cloud.select_by_index(index_list))
 
     clusters_sorted = sort_point_clouds_by_size(point_clouds_clustered)
-    clusters_sorted.reverse()
 
     if save_clusters:
         print("Saving all the single clusters!")
