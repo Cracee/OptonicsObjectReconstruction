@@ -71,3 +71,15 @@ def sort_point_clouds_by_size(list_of_point_clouds):
     result = [list_of_point_clouds[i] for i in sort_index]
     result.reverse()
     return result
+
+
+def read_stl_file_to_point_cloud(file_path, viusalize=False):
+    if not exists(file_path) or not file_path.endswith(".stl"):
+        raise NameError("The file name is not correct!")
+
+    mesh = o3d.io.read_triangle_mesh(file_path)
+    pointcloud = mesh.sample_points_poisson_disk(30000)
+
+    if viusalize:
+        o3d.visualization.draw_geometries([pointcloud])
+    return pointcloud

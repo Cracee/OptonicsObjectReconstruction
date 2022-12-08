@@ -11,13 +11,7 @@ def draw_registration_result(source, target, transformation):
     source_temp.paint_uniform_color([1, 0.706, 0])
     target_temp.paint_uniform_color([0, 0.651, 0.929])
     source_temp.transform(transformation)
-    o3d.visualization.draw_geometries(
-        [source_temp, target_temp],
-        zoom=0.4459,
-        front=[0.9288, -0.2951, -0.2242],
-        lookat=[1.6784, 2.0612, 1.4451],
-        up=[-0.3402, -0.9189, -0.1996],
-    )
+    o3d.visualization.draw_geometries([source_temp, target_temp])
 
 
 def preprocess_point_cloud(pcd, voxel_size):
@@ -39,10 +33,16 @@ def preprocess_point_cloud(pcd, voxel_size):
     return pcd_down, pcd_fpfh
 
 
-def prepare_dataset(voxel_size):
+def prepare_dataset(voxel_size, cloud_a=None, cloud_b=None):
     print(":: Load two point clouds and disturb initial pose.")
-    source = read_pcd_file("data/14_ramsphere/cluster_0.pcd", visualize=False)
-    target = read_pcd_file("data/14_ramsphere/cluster_2.pcd", visualize=False)
+    if cloud_a is None:
+        source = read_pcd_file("data/14_ramsphere/cluster_0.pcd", visualize=False)
+    else:
+        source = cloud_a
+    if cloud_b is None:
+        target = read_pcd_file("data/14_ramsphere/cluster_2.pcd", visualize=False)
+    else:
+        target = cloud_b
     trans_init = numpy.asarray(
         [
             [0.0, 0.0, 1.0, 0.0],
@@ -52,7 +52,6 @@ def prepare_dataset(voxel_size):
         ]
     )
     source.transform(trans_init)
-    draw_registration_result(source, target, numpy.identity(4))
 
     source_down, source_fpfh = preprocess_point_cloud(source, voxel_size)
     target_down, target_fpfh = preprocess_point_cloud(target, voxel_size)
@@ -105,12 +104,12 @@ def execute_fast_global_registration(
     return result
 
 
-def start_fast_global_registration():
+def start_fast_global_registration(cloud_a=None, cloud_b=None):
     """
     The function to call from outer scope to start the fast global registration in this file
     :return:
     """
-    voxel_size = 0.5  # means 5cm for this dataset
+    voxel_size = 2.0
     (
         source,
         target,
@@ -118,7 +117,7 @@ def start_fast_global_registration():
         target_down,
         source_fpfh,
         target_fpfh,
-    ) = prepare_dataset(voxel_size)
+    ) = prepare_dataset(voxel_size, cloud_a=cloud_a, cloud_b=cloud_b)
 
     result_fast = execute_fast_global_registration(
         source_down, target_down, source_fpfh, target_fpfh, voxel_size

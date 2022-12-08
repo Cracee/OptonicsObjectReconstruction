@@ -17,11 +17,17 @@ from open3d_tasks import (
     cluster_trial,
     split_point_cloud_by_clusters,
 )
-from util_functions import read_pcd_file, save_pcd_file
+from util_functions import read_pcd_file, save_pcd_file, read_stl_file_to_point_cloud
 from fast_global_registration import start_fast_global_registration
 
 # create_virtual_object(object_file="data/14_rampspheres.json", save_file="data/14_rampsheres.pcd", save_raw=True)
 # point_cloud = read_pcd_file("data/14_rampsheres_clustered.pcd", visualize=False)
 # sorted_clusters = split_point_cloud_by_clusters("data/14_rampsheres_clustered.pcd")
 
-start_fast_global_registration()
+# start_fast_global_registration()
+
+point_cloud = read_stl_file_to_point_cloud(
+    "C:/Users/Grego/Documents/Universität/Master V/Optonics Projekt/3D Objekte/Ramp_sphere.stl"
+)
+
+start_fast_global_registration(cloud_a=point_cloud)
