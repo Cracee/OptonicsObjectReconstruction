@@ -1,7 +1,11 @@
+import os.path
+
 import numpy as np
 import open3d as o3d
 import json
 import matplotlib.pyplot as plt
+import time
+import sys
 
 from nxlib import NxLib, NxLibItem
 from nxlib import Camera
@@ -14,17 +18,26 @@ from nxlib.constants import (
     ITM_TIMEOUT,
 )
 from nxlib import NxLibCommand
-from util_functions import convert_to_open3d_point_cloud
+from util_functions import (
+    convert_to_open3d_point_cloud,
+    read_pcd_file,
+    save_pcd_file,
+    sort_point_clouds_by_size,
+)
 
 
 def create_virtual_object(
-    object_file="data/t_piece.json", camera_serial_number="N36-804-16-BL", save_file=""
+    object_file="data/t_piece.json",
+    camera_serial_number="N36-804-16-BL",
+    save_file="",
+    save_raw=False,
 ):
     """
     A function that loads the given objects into a virtual environment with the given camera number. In there it will
     get a small Region of Interest Cut, the floor gets eliminated. After that, if specified, the resulting point cloud
     will get saved.
 
+    :param save_raw: True, when saved with floor, False without
     :param object_file: a json file containing the objects in Nx Tree Structure
     :param camera_serial_number: the serial number of the virtual camera
     :param save_file: if empty, there will be no save. Otherwise, the name of the savefile.
@@ -34,7 +47,7 @@ def create_virtual_object(
         f = open(object_file)
         data = json.load(f)
         jsonString = json.dumps(data)
-        print("Object File has bean read successful")
+        print("Object File has been read successful")
     except:
         raise Exception("Sorry, the .json Object file can`t be read the intended way.")
 
@@ -99,7 +112,13 @@ def create_virtual_object(
 
         if save_file:
             assert save_file.endswith(".pcd"), "The save file must end on .pcd"
+            if save_raw:
+                new_path = save_file[:-4] + "_raw" + save_file[-4:]
+                o3d.io.write_point_cloud(new_path, point_cloud)
+                # TODO Change to personal save function
+
             o3d.io.write_point_cloud(save_file, cropped_pcd)
+            # TODO Change to personal save function
 
 
 def cluster_objects(
@@ -131,4 +150,63 @@ def cluster_objects(
             lookat=[2.1813, 2.0619, 2.0999],
             up=[0.1204, -0.9852, 0.1215],
         )
-    return max_label + 1
+    return max_label + 1, point_cloud, labels
+
+
+def cluster_trial(point_cloud):
+    different_eps = [0.01, 0.1, 0.5, 1, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0]
+    different_min_sizes = [*range(10, 110, 10)]
+
+    results = []
+
+    for eps in different_eps:
+        for size in different_min_sizes:
+            start = time.time()
+            clusters, _, _ = cluster_objects(
+                point_cloud, eps=eps, min_size=size, print_progress=False
+            )
+            end = time.time()
+            elapsed_time = end - start
+
+            results.append(
+                f"{str(eps):<8} {str(size):<8} {str(elapsed_time):<8.4} {str(clusters):<8}"
+            )
+
+    print("eps   Min Size   time    clusters")
+    for item in results:
+        print(item)
+
+
+def split_point_cloud_by_clusters(point_cloud, save_clusters=""):
+    if isinstance(point_cloud, str):
+        point_cloud = read_pcd_file(point_cloud, visualize=False)
+
+    num_clus, pcd, labels = cluster_objects(
+        point_cloud, eps=4.0, min_size=50, visualize=False
+    )
+
+    point_clouds_clustered = []
+
+    for i in range(num_clus):
+        numpy_index_list = np.asarray(labels == i).nonzero()
+        index_list = np.asarray(numpy_index_list)[0]
+        point_clouds_clustered.append(point_cloud.select_by_index(index_list))
+
+    clusters_sorted = sort_point_clouds_by_size(point_clouds_clustered)
+    clusters_sorted.reverse()
+
+    if save_clusters:
+        print("Saving all the single clusters!")
+        current_wd = os.getcwd()
+        save_clusters = current_wd + "/" + save_clusters
+        print(save_clusters)
+        if not os.path.exists(save_clusters):
+            os.makedirs(save_clusters)
+            print("A new directory has been created!")
+        counter = 0
+        for item in point_clouds_clustered:
+            save_string = save_clusters + "/cluster_" + str(counter) + ".pcd"
+            save_pcd_file(item, save_string)
+            counter += 1
+
+    return clusters_sorted
