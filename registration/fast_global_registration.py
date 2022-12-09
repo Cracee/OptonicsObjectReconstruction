@@ -12,6 +12,8 @@ def draw_registration_result(source, target, transformation):
     target_temp.paint_uniform_color([0, 0.651, 0.929])
     source_temp.transform(transformation)
     o3d.visualization.draw_geometries([source_temp, target_temp])
+    new_pcd = source_temp + target_temp
+    return new_pcd
 
 
 def preprocess_point_cloud(pcd, voxel_size):
@@ -36,11 +38,13 @@ def preprocess_point_cloud(pcd, voxel_size):
 def prepare_dataset(voxel_size, cloud_a=None, cloud_b=None):
     print(":: Load two point clouds and disturb initial pose.")
     if cloud_a is None:
-        source = read_pcd_file("data/14_ramsphere/cluster_0.pcd", visualize=False)
+        source = read_pcd_file("data/14_ramp_order/cluster_1.pcd", visualize=False)
     else:
         source = cloud_a
     if cloud_b is None:
-        target = read_pcd_file("data/14_ramsphere/cluster_2.pcd", visualize=False)
+        target = read_pcd_file(
+            "data/frankenstein/cluster_comb_9u11_13.pcd", visualize=False
+        )
     else:
         target = cloud_b
     trans_init = numpy.asarray(
@@ -124,3 +128,47 @@ def start_fast_global_registration(cloud_a=None, cloud_b=None):
     )
     print(result_fast)
     draw_registration_result(source_down, target_down, result_fast.transformation)
+
+
+def start_icp_ptp(source, target, trans_init):
+    print("Initial alignment")
+    threshold = 1.0
+    evaluation = o3d.pipelines.registration.evaluate_registration(
+        source, target, threshold, trans_init
+    )
+    print(evaluation)
+    print("Apply point-to-point ICP")
+    reg_p2p = o3d.pipelines.registration.registration_icp(
+        source,
+        target,
+        threshold,
+        trans_init,
+        o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+        o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=20000),
+    )
+    print(reg_p2p)
+    print("Transformation is:")
+    print(reg_p2p.transformation)
+    resulting_pcd = draw_registration_result(source, target, reg_p2p.transformation)
+    return resulting_pcd
+
+
+def start_transformation_pipeline(cloud_a=None, cloud_b=None):
+    voxel_size = 0.1
+    (
+        source,
+        target,
+        source_down,
+        target_down,
+        source_fpfh,
+        target_fpfh,
+    ) = prepare_dataset(voxel_size, cloud_a=cloud_a, cloud_b=cloud_b)
+
+    result_fast = execute_fast_global_registration(
+        source_down, target_down, source_fpfh, target_fpfh, voxel_size
+    )
+    draw_registration_result(source_down, target_down, result_fast.transformation)
+
+    result = start_icp_ptp(source_down, target_down, result_fast.transformation)
+
+    return result

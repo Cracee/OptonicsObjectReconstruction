@@ -224,7 +224,7 @@ def split_point_cloud_by_clusters(point_cloud, save_clusters=""):
             os.makedirs(save_clusters)
             print("A new directory has been created!")
         counter = 0
-        for item in point_clouds_clustered:
+        for item in clusters_sorted:
             save_string = save_clusters + "/cluster_" + str(counter) + ".pcd"
             save_pcd_file(item, save_string)
             counter += 1
