@@ -230,3 +230,60 @@ def split_point_cloud_by_clusters(point_cloud, save_clusters=""):
             counter += 1
 
     return clusters_sorted
+
+
+def create_mesh_from_point_cloud(point_cloud, visualize=True, mode="alpha"):
+    # bunny = o3d.data.BunnyMesh()
+    # meshi = o3d.io.read_triangle_mesh(bunny.path)
+
+    if mode == "poisson":
+        print("run Poisson surface reconstruction")
+        with o3d.utility.VerbosityContextManager(o3d.utility.VerbosityLevel.Debug):
+            mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
+                point_cloud, depth=6
+            )
+        print(mesh)
+    elif mode == "alpha":
+        alpha = 0.8
+        print(f"alpha={alpha:.3f}")
+        mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(
+            point_cloud, alpha
+        )
+
+    elif mode == "ball_pivot":
+        radii = [0.05, 0.1, 0.2, 0.3, 0.5, 1.0]
+        mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
+            point_cloud, o3d.utility.DoubleVector(radii)
+        )
+        mesh.compute_vertex_normals()
+
+    if visualize:
+        o3d.visualization.draw_geometries([mesh])
+
+
+def display_inlier_outlier(cloud, ind):
+    inlier_cloud = cloud.select_by_index(ind)
+    outlier_cloud = cloud.select_by_index(ind, invert=True)
+
+    print("Showing outliers (red) and inliers (gray): ")
+    outlier_cloud.paint_uniform_color([1, 0, 0])
+    inlier_cloud.paint_uniform_color([0.8, 0.8, 0.8])
+    o3d.visualization.draw_geometries([inlier_cloud, outlier_cloud])
+
+
+def outlier_points_removal(point_cloud, mode="statistical"):
+    if mode == "statistical":
+        cl, ind = point_cloud.remove_statistical_outlier(nb_neighbors=20, std_ratio=3.0)
+    elif mode == "radius":
+        cl, ind = point_cloud.remove_radius_outlier(nb_points=20, radius=1.2)
+    display_inlier_outlier(point_cloud, ind)
+    return point_cloud.select_by_index(ind)
+
+
+def create_convex_hull(point_cloud):
+    hull, _ = point_cloud.compute_convex_hull()
+    hull_ls = o3d.geometry.LineSet.create_from_triangle_mesh(hull)
+    hull_ls.paint_uniform_color((1, 0, 0))
+    o3d.visualization.draw_geometries([point_cloud, hull_ls])
+    hull.paint_uniform_color([0, 0.706, 0.805])
+    return hull
