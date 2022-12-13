@@ -89,9 +89,7 @@ def prepare_dataset(voxel_size, cloud_a=None, cloud_b=None):
     return source, target, source_down, target_down, source_fpfh, target_fpfh
 
 
-def execute_global_registration(
-    source_down, target_down, source_fpfh, target_fpfh, voxel_size
-):
+def execute_global_registration(source, target):
     """
     The main function for executing the global registration based on RANSAC
 
@@ -102,6 +100,15 @@ def execute_global_registration(
     :param voxel_size: the voxel size, you downsampled with
     :return: transformation matrix of point cloud A to B
     """
+    voxel_size = 0.5
+    (
+        source,
+        target,
+        source_down,
+        target_down,
+        source_fpfh,
+        target_fpfh,
+    ) = prepare_dataset(voxel_size, cloud_a=source, cloud_b=target)
     distance_threshold = voxel_size * 1.5
     print(":: RANSAC registration on downsampled point clouds.")
     print("   Since the downsampling voxel size is %.3f," % voxel_size)
@@ -111,18 +118,20 @@ def execute_global_registration(
         target_down,
         source_fpfh,
         target_fpfh,
+        True,
         distance_threshold,
         o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
-        4,
+        3,
         [
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
                 distance_threshold
             ),
         ],
-        o3d.pipelines.registration.RANSACConvergenceCriteria(4000000, 500),
+        o3d.pipelines.registration.RANSACConvergenceCriteria(1000000, 0.999),
     )
-    return result
+    pcd = draw_registration_result(source_down, target_down, result.transformation)
+    return pcd
 
 
 def execute_fast_global_registration(
@@ -159,7 +168,7 @@ def start_fast_global_registration(cloud_a=None, cloud_b=None):
     The function to call from outer scope to start the fast global registration in this file
     :return:
     """
-    voxel_size = 2.0
+    voxel_size = 0.5
     (
         source,
         target,

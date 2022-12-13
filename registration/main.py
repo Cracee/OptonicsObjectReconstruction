@@ -24,10 +24,11 @@ from util_functions import read_pcd_file, save_pcd_file, read_stl_file_to_point_
 from fast_global_registration import (
     start_fast_global_registration,
     start_transformation_pipeline,
+    execute_global_registration,
 )
 import pyransac3d as pyrsc
 
-
+"""
 pcd = read_pcd_file("data/14_rampsheres_raw.pcd", visualize=True)
 plane_model, inliers = pcd.segment_plane(
     distance_threshold=0.5, ransac_n=3, num_iterations=1000
@@ -53,3 +54,14 @@ sorted_clusters = split_point_cloud_by_clusters(outlier_cloud)
 
 
 o3d.visualization.draw_geometries(sorted_clusters)
+"""
+
+# At the moment this algorithm starts a working RANSAC, but maybe it will not be a perfect alignment
+
+pcd_a = read_pcd_file("data/14_ramp_order/cluster_13.pcd", visualize=False)
+pcd_b = read_pcd_file("data/14_ramp_order/cluster_11.pcd", visualize=False)
+
+reso = execute_global_registration(pcd_a, pcd_b)
+
+save_pcd_file(reso, "data/frankenstein/2_cluster_comb_11_u_13.pcd")
+# o3d.visualization.draw_geometries([reso])
