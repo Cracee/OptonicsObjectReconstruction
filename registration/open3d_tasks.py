@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import time
 import sys
 
+
 from nxlib import NxLib, NxLibItem
 from nxlib import Camera
 from nxlib.constants import (
@@ -203,7 +204,7 @@ def split_point_cloud_by_clusters(point_cloud, save_clusters=""):
         point_cloud = read_pcd_file(point_cloud, visualize=False)
 
     num_clus, pcd, labels = cluster_objects(
-        point_cloud, eps=4.0, min_size=50, visualize=False
+        point_cloud, eps=4.0, min_size=150, visualize=False
     )
 
     point_clouds_clustered = []
@@ -280,10 +281,11 @@ def outlier_points_removal(point_cloud, mode="statistical"):
     return point_cloud.select_by_index(ind)
 
 
-def create_convex_hull(point_cloud):
+def create_convex_hull(point_cloud, visualize=False):
     hull, _ = point_cloud.compute_convex_hull()
     hull_ls = o3d.geometry.LineSet.create_from_triangle_mesh(hull)
     hull_ls.paint_uniform_color((1, 0, 0))
-    o3d.visualization.draw_geometries([point_cloud, hull_ls])
+    if visualize:
+        o3d.visualization.draw_geometries([point_cloud, hull_ls])
     hull.paint_uniform_color([0, 0.706, 0.805])
     return hull
