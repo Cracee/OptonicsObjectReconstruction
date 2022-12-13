@@ -234,6 +234,14 @@ def split_point_cloud_by_clusters(point_cloud, save_clusters=""):
 
 
 def create_mesh_from_point_cloud(point_cloud, visualize=True, mode="alpha"):
+    """
+    A function to turn a point cloud into a 3D Triangle Mesh
+
+    :param point_cloud: A Point Cloud, in open3D style
+    :param visualize: True, if you want to see the result
+    :param mode: ["poisson", "alpha", "ball_pivot"] The chosen extrapolation mode
+    :return: the newly generated mesh
+    """
     # bunny = o3d.data.BunnyMesh()
     # meshi = o3d.io.read_triangle_mesh(bunny.path)
 
@@ -261,8 +269,16 @@ def create_mesh_from_point_cloud(point_cloud, visualize=True, mode="alpha"):
     if visualize:
         o3d.visualization.draw_geometries([mesh])
 
+    return mesh
+
 
 def display_inlier_outlier(cloud, ind):
+    """
+    Helper Function to visualize two parts of point clouds in different colours
+    :param cloud: The whole point cloud in open3D style
+    :param ind: the indexes of the points you want to have highlighted
+    :return:
+    """
     inlier_cloud = cloud.select_by_index(ind)
     outlier_cloud = cloud.select_by_index(ind, invert=True)
 
@@ -273,6 +289,12 @@ def display_inlier_outlier(cloud, ind):
 
 
 def outlier_points_removal(point_cloud, mode="statistical"):
+    """
+    A function to remove outliers in point clouds, parameters are tuned to the recordings of N36-804-16-BL Camera
+    :param point_cloud: the point cloud to work on, in open3D style
+    :param mode: ["statistical", "radius"] The method to identify outliers
+    :return: Thinned out point cloud
+    """
     if mode == "statistical":
         cl, ind = point_cloud.remove_statistical_outlier(nb_neighbors=20, std_ratio=3.0)
     elif mode == "radius":
@@ -282,6 +304,12 @@ def outlier_points_removal(point_cloud, mode="statistical"):
 
 
 def create_convex_hull(point_cloud, visualize=False):
+    """
+    Creatte the convex hull (as mesh) around a point cloud
+    :param point_cloud: Yout point cloud you are working on, in open3d style
+    :param visualize: True, if you want to see the result in a fancy way
+    :return: Mesh, the convex hull of the point cloud
+    """
     hull, _ = point_cloud.compute_convex_hull()
     hull_ls = o3d.geometry.LineSet.create_from_triangle_mesh(hull)
     hull_ls.paint_uniform_color((1, 0, 0))

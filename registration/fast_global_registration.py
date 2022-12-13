@@ -1,3 +1,8 @@
+"""
+Most of this File are functions from the open3d tutorials towards Registration. Some of them are altered and
+a few are of my own origin. Still, most credits go out to open3d.
+"""
+
 import open3d as o3d
 import copy
 import numpy
@@ -6,6 +11,14 @@ from util_functions import read_pcd_file, save_pcd_file
 
 
 def draw_registration_result(source, target, transformation):
+    """
+    Draw the registration result, visualizing the two point clouds in different colours
+
+    :param source: The point cloud you wanted to transform
+    :param target: The point cloud you wanted to aim for
+    :param transformation: the transformation matrix you calculated
+    :return: Point Cloud, both added together
+    """
     source_temp = copy.deepcopy(source)
     target_temp = copy.deepcopy(target)
     source_temp.paint_uniform_color([1, 0.706, 0])
@@ -17,6 +30,12 @@ def draw_registration_result(source, target, transformation):
 
 
 def preprocess_point_cloud(pcd, voxel_size):
+    """
+    A preprocessing step of a point cloud, to downsample for better calculation later.
+    :param pcd: the given pointcloud, in open3D style
+    :param voxel_size: the size of the voxel, you want to downpixel to
+    :return: a smaller point cloud, and the fpfh feature
+    """
     print(":: Downsample with a voxel size %.3f." % voxel_size)
     pcd_down = pcd.voxel_down_sample(voxel_size)
 
@@ -36,6 +55,14 @@ def preprocess_point_cloud(pcd, voxel_size):
 
 
 def prepare_dataset(voxel_size, cloud_a=None, cloud_b=None):
+    """
+    A preprocessing stept to prepare your dataset for registration
+
+    :param voxel_size: the voxel size you want to downpixel to
+    :param cloud_a: point cloud A
+    :param cloud_b: point cloud B
+    :return: both point clouds, both smaller point clouds, both fpfh features
+    """
     print(":: Load two point clouds and disturb initial pose.")
     if cloud_a is None:
         source = read_pcd_file("data/14_ramp_order/cluster_1.pcd", visualize=False)
@@ -65,6 +92,16 @@ def prepare_dataset(voxel_size, cloud_a=None, cloud_b=None):
 def execute_global_registration(
     source_down, target_down, source_fpfh, target_fpfh, voxel_size
 ):
+    """
+    The main function for executing the global registration based on RANSAC
+
+    :param source_down: point cloud A in smaller resolution
+    :param target_down: point cloud B in smaller resolution
+    :param source_fpfh: fpfh feature of point cloud A
+    :param target_fpfh: fpfh feature of point cloud B
+    :param voxel_size: the voxel size, you downsampled with
+    :return: transformation matrix of point cloud A to B
+    """
     distance_threshold = voxel_size * 1.5
     print(":: RANSAC registration on downsampled point clouds.")
     print("   Since the downsampling voxel size is %.3f," % voxel_size)
@@ -91,6 +128,15 @@ def execute_global_registration(
 def execute_fast_global_registration(
     source_down, target_down, source_fpfh, target_fpfh, voxel_size
 ):
+    """
+    The main function for the registration based on Fast Global Registration
+    :param source_down: point cloud A in smaller resolution
+    :param target_down: point cloud B in smaller resolution
+    :param source_fpfh: fpfh feature of point cloud A
+    :param target_fpfh: fpfh feature of point cloud B
+    :param voxel_size: the voxel size, you downsampled with
+    :return: transformation matrix of point cloud A to B
+    """
     distance_threshold = voxel_size * 0.5
     print(
         ":: Apply fast global registration with distance threshold %.3f"
@@ -131,6 +177,14 @@ def start_fast_global_registration(cloud_a=None, cloud_b=None):
 
 
 def start_icp_ptp(source, target, trans_init):
+    """
+    The main funtcion to start the ICP algorithm for two point clouds (local transformation)
+
+    :param source: Point Cloud A
+    :param target: Point Cloud B
+    :param trans_init: Initial transformation to gain a very close matching already
+    :return: the added together point clouds
+    """
     print("Initial alignment")
     threshold = 1.0
     evaluation = o3d.pipelines.registration.evaluate_registration(
@@ -154,6 +208,12 @@ def start_icp_ptp(source, target, trans_init):
 
 
 def start_transformation_pipeline(cloud_a=None, cloud_b=None):
+    """
+    A Pipeline function to start first the Fast Global Transformation, followed by the ICP PtP Transformation
+    :param cloud_a: Point Cloud A
+    :param cloud_b: Point Cloud B
+    :return: The two matched point clouds
+    """
     voxel_size = 0.1
     (
         source,
