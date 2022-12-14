@@ -24,6 +24,9 @@ from util_functions import (
     read_pcd_file,
     save_pcd_file,
     sort_point_clouds_by_size,
+    move_points_by,
+    move_point_cloud_close_to_zero,
+    calculate_dist,
 )
 
 
@@ -317,3 +320,36 @@ def create_convex_hull(point_cloud, visualize=False):
         o3d.visualization.draw_geometries([point_cloud, hull_ls])
     hull.paint_uniform_color([0, 0.706, 0.805])
     return hull
+
+
+def move_by_boxes_to_center(pcd_a, pcd_b):
+    pcd_a = move_point_cloud_close_to_zero(pcd_a)
+    pcd_b = move_point_cloud_close_to_zero(pcd_b)
+
+    a_box = pcd_a.get_oriented_bounding_box()
+    a_box.color = (1, 0, 0)
+    a_x, a_y, a_z = a_box.center
+    b_box = pcd_b.get_oriented_bounding_box()
+    b_box.color = (0, 1, 1)
+    b_x, b_y, b_z = b_box.center
+    o3d.visualization.draw_geometries([a_box, b_box])
+    mov_coord = calculate_dist((a_x, a_y, a_z), (b_x, b_y, b_z))
+    pcd_a = move_points_by(pcd_a, mov_coord)
+    a_box = pcd_a.get_oriented_bounding_box()
+    a_box.color = (1, 0, 0)
+    o3d.visualization.draw_geometries([a_box, b_box])
+    o3d.visualization.draw_geometries([pcd_a, pcd_b])
+    print(a_box.volume())
+    print(b_box.volume())
+
+
+def segement_plane(pcd):
+    plane_model, inliers = pcd.segment_plane(
+        distance_threshold=0.5, ransac_n=3, num_iterations=1000
+    )
+    inlier_cloud = pcd.select_by_index(inliers)
+    outlier_cloud = pcd.select_by_index(inliers, invert=True)
+    inlier_cloud.paint_uniform_color([1, 0, 0])
+    outlier_cloud.paint_uniform_color([0.6, 0.6, 0.6])
+    o3d.visualization.draw_geometries([inlier_cloud, outlier_cloud])
+    return inlier_cloud, outlier_cloud
