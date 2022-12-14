@@ -9,7 +9,7 @@ VOXEL_SIZE = 0.5
 def load_point_clouds():
     pcds = []
     for i in range(7):
-        path = "data/7_RAMP_order/cluster_" + str(i) + ".pcd"
+        path = "data/7_cylin_order/cluster_" + str(i) + ".pcd"
         pcd = o3d.io.read_point_cloud(path)
         pcd_down = pcd.voxel_down_sample(voxel_size=VOXEL_SIZE)
         pcd_down = move_point_cloud_close_to_zero(pcd_down)
