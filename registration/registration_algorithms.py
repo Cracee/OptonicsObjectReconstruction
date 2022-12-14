@@ -10,13 +10,14 @@ import numpy
 from util_functions import read_pcd_file, save_pcd_file
 
 
-def draw_registration_result(source, target, transformation):
+def draw_registration_result(source, target, transformation, visualize=True):
     """
     Draw the registration result, visualizing the two point clouds in different colours
 
     :param source: The point cloud you wanted to transform
     :param target: The point cloud you wanted to aim for
     :param transformation: the transformation matrix you calculated
+    :param visualize: if you want to visualize the result
     :return: Point Cloud, both added together
     """
     source_temp = copy.deepcopy(source)
@@ -24,7 +25,8 @@ def draw_registration_result(source, target, transformation):
     source_temp.paint_uniform_color([1, 0.706, 0])
     target_temp.paint_uniform_color([0, 0.651, 0.929])
     source_temp.transform(transformation)
-    o3d.visualization.draw_geometries([source_temp, target_temp])
+    if visualize:
+        o3d.visualization.draw_geometries([source_temp, target_temp])
     new_pcd = source_temp + target_temp
     return new_pcd
 
@@ -52,6 +54,22 @@ def preprocess_point_cloud(pcd, voxel_size):
         o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100),
     )
     return pcd_down, pcd_fpfh
+
+
+def preprocess_normals_fpfh(pcd, voxel_size=0.5):
+    radius_normal = voxel_size * 2
+    print(":: Estimate normal with search radius %.3f." % radius_normal)
+    pcd.estimate_normals(
+        o3d.geometry.KDTreeSearchParamHybrid(radius=radius_normal, max_nn=30)
+    )
+
+    radius_feature = voxel_size * 5
+    print(":: Compute FPFH feature with search radius %.3f." % radius_feature)
+    pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
+        pcd,
+        o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100),
+    )
+    return pcd, pcd_fpfh
 
 
 def prepare_dataset(voxel_size, cloud_a=None, cloud_b=None):
@@ -89,7 +107,7 @@ def prepare_dataset(voxel_size, cloud_a=None, cloud_b=None):
     return source, target, source_down, target_down, source_fpfh, target_fpfh
 
 
-def execute_global_registration(source, target):
+def execute_global_registration(source, target, voxel_size=0.5, visualize=True):
     """
     The main function for executing the global registration based on RANSAC
 
@@ -100,7 +118,7 @@ def execute_global_registration(source, target):
     :param voxel_size: the voxel size, you downsampled with
     :return: transformation matrix of point cloud A to B
     """
-    voxel_size = 0.5
+
     (
         source,
         target,
@@ -120,18 +138,60 @@ def execute_global_registration(source, target):
         target_fpfh,
         True,
         distance_threshold,
-        o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
+        o3d.pipelines.registration.TransformationEstimationPointToPoint(True),
         3,
         [
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.8),
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
                 distance_threshold
             ),
         ],
         o3d.pipelines.registration.RANSACConvergenceCriteria(1000000, 0.999),
     )
-    pcd = draw_registration_result(source_down, target_down, result.transformation)
-    return pcd
+
+    pcd = draw_registration_result(
+        source_down, target_down, result.transformation, visualize=visualize
+    )
+    return pcd, source_down, target_down, result, result.transformation
+
+
+def execute_RANSAC_for_multiway(source, target, voxel_size=0.5):
+    """
+    The main function for executing the global registration based on RANSAC
+
+    :param source: point cloud A in smaller resolution
+    :param target: point cloud B in smaller resolution
+    :param voxel_size: the voxel size, you downsampled with
+    :return: transformation matrix of point cloud A to B
+    """
+    source_down, source_fpfh = preprocess_normals_fpfh(source, voxel_size=voxel_size)
+    target_down, target_fpfh = preprocess_normals_fpfh(target, voxel_size=voxel_size)
+    distance_threshold = voxel_size * 1.5
+    print(":: RANSAC registration on downsampled point clouds.")
+    print("   Since the downsampling voxel size is %.3f," % voxel_size)
+    print("   we use a liberal distance threshold %.3f." % distance_threshold)
+    result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
+        source_down,
+        target_down,
+        source_fpfh,
+        target_fpfh,
+        True,
+        distance_threshold,
+        o3d.pipelines.registration.TransformationEstimationPointToPoint(True),
+        3,
+        [
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.8),
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
+                distance_threshold
+            ),
+        ],
+        o3d.pipelines.registration.RANSACConvergenceCriteria(1000000, 0.999),
+    )
+
+    pcd = draw_registration_result(
+        source_down, target_down, result.transformation, visualize=False
+    )
+    return pcd, source_down, target_down, result, result.transformation
 
 
 def execute_fast_global_registration(
@@ -213,7 +273,34 @@ def start_icp_ptp(source, target, trans_init):
     print("Transformation is:")
     print(reg_p2p.transformation)
     resulting_pcd = draw_registration_result(source, target, reg_p2p.transformation)
-    return resulting_pcd
+    return resulting_pcd, reg_p2p.transformation
+
+
+def icp_ptp_multiway(source, target, trans_init):
+    """
+    The main funtcion to start the ICP algorithm for two point clouds (local transformation)
+
+    :param source: Point Cloud A
+    :param target: Point Cloud B
+    :param trans_init: Initial transformation to gain a very close matching already
+    :return: the added together point clouds
+    """
+    print("Initial alignment")
+    threshold = 1.0
+    evaluation = o3d.pipelines.registration.evaluate_registration(
+        source, target, threshold, trans_init
+    )
+    print(evaluation)
+    print("Apply point-to-point ICP")
+    reg_p2p = o3d.pipelines.registration.registration_icp(
+        source,
+        target,
+        threshold,
+        trans_init,
+        o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+        o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=20000),
+    )
+    return reg_p2p
 
 
 def start_transformation_pipeline(cloud_a=None, cloud_b=None):

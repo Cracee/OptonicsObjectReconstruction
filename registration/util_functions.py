@@ -83,3 +83,34 @@ def read_stl_file_to_point_cloud(file_path, viusalize=False):
     if viusalize:
         o3d.visualization.draw_geometries([pointcloud])
     return pointcloud
+
+
+def move_point_cloud_close_to_zero(pcd):
+    all_points = numpy.asarray(pcd.points)
+    x, y, z = all_points[0]
+    for point in all_points:
+        point[0] -= x
+        point[1] -= y
+        point[2] -= z
+    pcd.points = o3d.utility.Vector3dVector(all_points)
+    return pcd
+
+
+def move_points_by(pcd, coord):
+    x, y, z = coord
+    all_points = numpy.asarray(pcd.points)
+    for point in all_points:
+        point[0] += x
+        point[1] += y
+        point[2] += z
+    pcd.points = o3d.utility.Vector3dVector(all_points)
+    return pcd
+
+
+def calculate_dist(coord_a, coord_b):
+    a_x, a_y, a_z = coord_a
+    b_x, b_y, b_z = coord_b
+    x = b_x - a_x
+    y = b_y - a_y
+    z = b_z - a_z
+    return x, y, z
