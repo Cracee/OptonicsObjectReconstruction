@@ -1,3 +1,7 @@
+"""
+Some Stuff, like reading out a pcd file, is always handy to have close. This is the file for stuff like this.
+"""
+
 import open3d as o3d
 import copy
 import numpy

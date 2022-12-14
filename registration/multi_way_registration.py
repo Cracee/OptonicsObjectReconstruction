@@ -1,3 +1,9 @@
+"""
+This file is a copy of the Multiway registration Tutorial of the open3d docs. It is fitted to the personal needs,
+therefore, the purpose is to register fragments instead of the whole scenes. Also it has an added choice between
+RANSAC and ICP PtPlane
+"""
+
 import open3d as o3d
 import numpy as np
 from registration_algorithms import execute_RANSAC_for_multiway, icp_ptp_multiway
@@ -7,6 +13,10 @@ VOXEL_SIZE = 0.5
 
 
 def load_point_clouds():
+    """
+    A function to call the different point clouds you want to register with multiway
+    :return: List of open3d Point Clouds
+    """
     pcds = []
     for i in range(7):
         path = "data/7_cylin_order/cluster_" + str(i) + ".pcd"
@@ -20,7 +30,14 @@ def load_point_clouds():
     return pcds
 
 
-def pairwise_registration(source, target, mode="RANSAC"):
+def pairwise_registration(source, target, mode="PtPlane"):
+    """
+    Check for pairwise registration of two point clouds
+    :param source: Point cloud A in open3d style
+    :param target: Point cloud B in open3d style
+    :param mode: "RANSAC" or "PtPlane" - the registration method you want to use
+    :return:
+    """
     if mode == "RANSAC":
         print("Apply RANSAC")
         _, _, _, icp_coarse, _ = execute_RANSAC_for_multiway(
@@ -58,6 +75,14 @@ def pairwise_registration(source, target, mode="RANSAC"):
 def full_registration(
     pcds, max_correspondence_distance_coarse, max_correspondence_distance_fine
 ):
+    """
+    Main function to diregent the multiway registration. It implements a pose_graph for registering multiple
+    fragments of point clouds.
+    :param pcds: List of open3D point clouds
+    :param max_correspondence_distance_coarse: for ICP PLane the max coarse distance
+    :param max_correspondence_distance_fine:  for ICP PLane the max fine distance
+    :return: the pose_graph of the registrations
+    """
     pose_graph = o3d.pipelines.registration.PoseGraph()
     odometry = np.identity(4)
     pose_graph.nodes.append(o3d.pipelines.registration.PoseGraphNode(odometry))

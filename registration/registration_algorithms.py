@@ -57,6 +57,12 @@ def preprocess_point_cloud(pcd, voxel_size):
 
 
 def preprocess_normals_fpfh(pcd, voxel_size=0.5):
+    """
+    In case you want to preprocess without downsampling, then this is the function for you
+    :param pcd: Point Cloud of Open3d style
+    :param voxel_size: float, size of the voxel you already downsampled with
+    :return: the point cloud with calculated normals and the fpfh feature
+    """
     radius_normal = voxel_size * 2
     print(":: Estimate normal with search radius %.3f." % radius_normal)
     pcd.estimate_normals(
