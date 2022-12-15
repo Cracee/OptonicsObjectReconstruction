@@ -14,6 +14,11 @@ VOXEL_SIZE = 0.5
 
 
 def preprocess_point_cloud(pcd):
+    """
+    Simple preprocessing step that needs to be done for every point cloud
+    :param pcd: Raw Point Cloud
+    :return: Preprocessed Point Cloud
+    """
     pcd_down = pcd.voxel_down_sample(voxel_size=VOXEL_SIZE)
     pcd_down = move_point_cloud_close_to_zero(pcd_down)
     pcd_down.estimate_normals(
@@ -23,6 +28,10 @@ def preprocess_point_cloud(pcd):
 
 
 def load_synthetic_pcd():
+    """
+    Instead of loading real measurements from the virtual camerea, create synthetic data instead
+    :return: list of fragments
+    """
     fragment_list = generate_fragments("rampshere", 7)
     post_process_fragments = []
     for item in fragment_list:
