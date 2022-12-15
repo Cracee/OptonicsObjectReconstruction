@@ -8,8 +8,26 @@ import open3d as o3d
 import numpy as np
 from registration_algorithms import execute_RANSAC_for_multiway, icp_ptp_multiway
 from util_functions import move_point_cloud_close_to_zero
+from synthetic_data_creation import generate_fragments
 
 VOXEL_SIZE = 0.5
+
+
+def preprocess_point_cloud(pcd):
+    pcd_down = pcd.voxel_down_sample(voxel_size=VOXEL_SIZE)
+    pcd_down = move_point_cloud_close_to_zero(pcd_down)
+    pcd_down.estimate_normals(
+        search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30)
+    )
+    return pcd_down
+
+
+def load_synthetic_pcd():
+    fragment_list = generate_fragments("rampshere", 7)
+    post_process_fragments = []
+    for item in fragment_list:
+        post_process_fragments.append(preprocess_point_cloud(item))
+    return post_process_fragments
 
 
 def load_point_clouds():
@@ -21,16 +39,12 @@ def load_point_clouds():
     for i in range(7):
         path = "data/7_cylin_order/cluster_" + str(i) + ".pcd"
         pcd = o3d.io.read_point_cloud(path)
-        pcd_down = pcd.voxel_down_sample(voxel_size=VOXEL_SIZE)
-        pcd_down = move_point_cloud_close_to_zero(pcd_down)
-        pcd_down.estimate_normals(
-            search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30)
-        )
+        pcd_down = preprocess_point_cloud(pcd)
         pcds.append(pcd_down)
     return pcds
 
 
-def pairwise_registration(source, target, mode="PtPlane"):
+def pairwise_registration(source, target, mode="RANSAC"):
     """
     Check for pairwise registration of two point clouds
     :param source: Point cloud A in open3d style
@@ -120,7 +134,8 @@ def full_registration(
     return pose_graph
 
 
-pcds_down = load_point_clouds()
+# pcds_down = load_point_clouds()
+pcds_down = load_synthetic_pcd()
 o3d.visualization.draw_geometries(pcds_down)
 
 print("Full registration ...")
