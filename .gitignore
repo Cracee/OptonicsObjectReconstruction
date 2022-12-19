@@ -128,6 +128,20 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# addition by OMNet_Pytorch-main/.gitignore
+OMNet_Pytorch-main/experiments/experiment_omnet/summary
+OMNet_Pytorch-main/experiments/experiment_omnet/*.log
+OMNet_Pytorch-main/experiments/experiment_omnet/*.pth
+OMNet_Pytorch-main/experiments/experiment_omnet/val*
+OMNet_Pytorch-main/experiments/experiment_omnet/test*
+OMNet_Pytorch-main/dataset/data
+OMNet_Pytorch-main/dataset/data.zip
+OMNet_Pytorch-main/*/__pycache__
+OMNet_Pytorch-main/checkpoints
+OMNet_Pytorch-main/configs
+OMNet_Pytorch-main/images
+OMNet_Pytorch-main/README.md
+
 # additions by Cracee
 .idea
 data

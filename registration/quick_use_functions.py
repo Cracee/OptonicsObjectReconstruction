@@ -31,8 +31,8 @@ from registration_algorithms import (
 )
 
 
-# pcd = read_pcd_file("data/multiway_registration/multiway_registration.pcd", visualize=True)
+pcd = read_pcd_file("data/frankenstein/cluster_comb_9u11U13_1.pcd", visualize=True)
 
 # create_virtual_object(object_file="data/7_cylin.json", save_file="data/7_cylin.pcd", save_raw=True)
 
-split_point_cloud_by_clusters("data/7_cylin.pcd", save_clusters="data/7_cylin_order")
+# split_point_cloud_by_clusters("data/franken.pcd", save_clusters="data/7_cylin_order")

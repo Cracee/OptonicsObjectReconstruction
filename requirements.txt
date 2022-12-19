@@ -1,3 +1,13 @@
 pre-commit
 open3d
 nxlib==3.4.715
+coloredlogs
+h5py
+numpy
+pytorch3d
+scipy
+termcolor
+torch
+torchvision
+tqdm
+transforms3d
