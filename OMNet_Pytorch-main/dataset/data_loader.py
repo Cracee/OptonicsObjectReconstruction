@@ -30,7 +30,7 @@ class ModelNetNpy(Dataset):
         categories=None,
         transform=None,
     ):
-        """ModelNet40 TS data."""
+        """ModelNet40 TS dataset."""
         self._logger = logging.getLogger(self.__class__.__name__)
         self._root = dataset_path
         self._subset = subset
@@ -38,7 +38,9 @@ class ModelNetNpy(Dataset):
         metadata_fpath = os.path.join(
             self._root, "modelnet_{}_{}.pickle".format(dataset_mode, subset)
         )
-        self._logger.info("Loading data from {} for {}".format(metadata_fpath, subset))
+        self._logger.info(
+            "Loading dataset from {} for {}".format(metadata_fpath, subset)
+        )
 
         if not os.path.exists(os.path.join(dataset_path)):
             assert FileNotFoundError("Not found dataset_path: {}".format(dataset_path))
@@ -89,7 +91,7 @@ class ModelNetNpy(Dataset):
 
         data_path = self._data[item]
 
-        # load and process data
+        # load and process dataset
         points = np.load(data_path)
         idx = np.array(
             int(os.path.splitext(os.path.basename(data_path))[0].split("_")[1])
@@ -115,18 +117,18 @@ def fetch_dataloader(params):
     )
     train_transforms, test_transforms = fetch_transform(params)
     if params.dataset_type == "modelnet_os":
-        dataset_path = "./dataset/data/modelnet_os"
+        dataset_path = "./dataset/dataset/modelnet_os"
         train_categories = [
             line.rstrip("\n")
-            for line in open("./dataset/data/modelnet40_half1_rm_rotate.txt")
+            for line in open("./dataset/dataset/modelnet40_half1_rm_rotate.txt")
         ]
         val_categories = [
             line.rstrip("\n")
-            for line in open("./dataset/data/modelnet40_half1_rm_rotate.txt")
+            for line in open("./dataset/dataset/modelnet40_half1_rm_rotate.txt")
         ]
         test_categories = [
             line.rstrip("\n")
-            for line in open("./dataset/data/modelnet40_half2_rm_rotate.txt")
+            for line in open("./dataset/dataset/modelnet40_half2_rm_rotate.txt")
         ]
         train_categories.sort()
         val_categories.sort()
@@ -154,18 +156,18 @@ def fetch_dataloader(params):
         )
 
     elif params.dataset_type == "modelnet_ts":
-        dataset_path = "./dataset/data/modelnet_ts"
+        dataset_path = "./dataset/dataset/modelnet_ts"
         train_categories = [
             line.rstrip("\n")
-            for line in open("./dataset/data/modelnet40_half1_rm_rotate.txt")
+            for line in open("./dataset/dataset/modelnet40_half1_rm_rotate.txt")
         ]
         val_categories = [
             line.rstrip("\n")
-            for line in open("./dataset/data/modelnet40_half1_rm_rotate.txt")
+            for line in open("./dataset/dataset/modelnet40_half1_rm_rotate.txt")
         ]
         test_categories = [
             line.rstrip("\n")
-            for line in open("./dataset/data/modelnet40_half2_rm_rotate.txt")
+            for line in open("./dataset/dataset/modelnet40_half2_rm_rotate.txt")
         ]
         train_categories.sort()
         val_categories.sort()
@@ -197,7 +199,7 @@ def fetch_dataloader(params):
 
     dataloaders = {}
     params.prefetch_factor = 5
-    # add defalt train data loader
+    # add defalt train dataset loader
     train_dl = DataLoader(
         train_ds,
         batch_size=params.train_batch_size,
@@ -210,7 +212,7 @@ def fetch_dataloader(params):
     )
     dataloaders["train"] = train_dl
 
-    # chosse val or test data loader for evaluate
+    # chosse val or test dataset loader for evaluate
     for split in ["val", "test"]:
         if split in params.eval_type:
             if split == "val":

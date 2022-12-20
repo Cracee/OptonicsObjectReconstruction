@@ -29,7 +29,7 @@ def preprocess_point_cloud(pcd):
 
 def load_synthetic_pcd():
     """
-    Instead of loading real measurements from the virtual camerea, create synthetic data instead
+    Instead of loading real measurements from the virtual camerea, create synthetic dataset instead
     :return: list of fragments
     """
     fragment_list = generate_fragments("rampshere", 7)
@@ -46,7 +46,7 @@ def load_point_clouds():
     """
     pcds = []
     for i in range(7):
-        path = "data/7_cylin_order/cluster_" + str(i) + ".pcd"
+        path = "dataset/7_cylin_order/cluster_" + str(i) + ".pcd"
         pcd = o3d.io.read_point_cloud(path)
         pcd_down = preprocess_point_cloud(pcd)
         pcds.append(pcd_down)

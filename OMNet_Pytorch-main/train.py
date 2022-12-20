@@ -38,7 +38,7 @@ def train(model, manager: Manager):
         model: (torch.nn.Module) the neural network
         optimizer: (torch.optim) optimizer for parameters of model
         loss_fn: a function that takes batch_output and batch_labels and computes the loss for the batch
-        dataloader: (DataLoader) a torch.utils.data.DataLoader object that fetches training data
+        dataloader: (DataLoader) a torch.utils.dataset.DataLoader object that fetches training dataset
         metrics: (dict) a dictionary of functions that compute a metric using the output and labels of each batch
         params: (Params) hyperparameters
         num_steps: (int) number of batches to train on, each of size params.batch_size
@@ -95,7 +95,7 @@ def evaluate(model, manager: Manager):
     Args:
         model: (torch.nn.Module) the neural network
         loss_fn: a function that takes batch_output and batch_labels and computes the loss for the batch
-        dataloader: (DataLoader) a torch.utils.data.DataLoader object that fetches data
+        dataloader: (DataLoader) a torch.utils.dataset.DataLoader object that fetches dataset
         metrics: (dict) a dictionary of functions that compute a metric using the output and labels of each batch
         params: (Params) hyperparameters
         num_steps: (int) number of batches to train on, each of size params.batch_size
@@ -126,7 +126,7 @@ def evaluate(model, manager: Manager):
 
             # compute RMSE metrics
             manager.summarize_metric_status(metrics, "val")
-            # update data to tensorboard
+            # update dataset to tensorboard
             manager.write_metric_to_tb(split="val")
             # For each epoch, update and print the metric
             manager.print_metrics("val", title="Val", color="green", only_best=True)
@@ -151,7 +151,7 @@ def evaluate(model, manager: Manager):
 
             # compute RMSE metrics
             manager.summarize_metric_status(metrics, "test")
-            # update data to tensorboard
+            # update dataset to tensorboard
             manager.write_metric_to_tb(split="test")
             # For each epoch, update and print the metric
             manager.print_metrics("test", title="Test", color="red", only_best=True)
@@ -162,7 +162,7 @@ def train_and_evaluate(model, manager: Manager):
 
     Args:
         model: (torch.nn.Module) the neural network
-        train_dataloader: (DataLoader) a torch.utils.data.DataLoader object that fetches training data
+        train_dataloader: (DataLoader) a torch.utils.dataset.DataLoader object that fetches training dataset
     """
 
     # reload weights from restore_file if specified

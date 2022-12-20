@@ -25,7 +25,7 @@ def convert_to_open3d_point_cloud(point_map):
     return open3d_point_cloud
 
 
-def read_pcd_file(pcd_file="data/t_piece.pcd", visualize=True):
+def read_pcd_file(pcd_file="dataset/t_piece.pcd", visualize=True):
     """
     Simple read function, to open a point cloud from a file, with the option to directly visualize it.
 

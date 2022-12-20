@@ -25,7 +25,9 @@ def _init_(args):
         os.makedirs("checkpoints/" + args.exp_name + "/" + "models")
     os.system("cp main.py checkpoints" + "/" + args.exp_name + "/" + "main.py.backup")
     os.system("cp model.py checkpoints" + "/" + args.exp_name + "/" + "model.py.backup")
-    os.system("cp data.py checkpoints" + "/" + args.exp_name + "/" + "data.py.backup")
+    os.system(
+        "cp dataset.py checkpoints" + "/" + args.exp_name + "/" + "dataset.py.backup"
+    )
 
 
 def train(args, net, train_loader, test_loader):

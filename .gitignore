@@ -142,6 +142,10 @@ OMNet_Pytorch-main/configs
 OMNet_Pytorch-main/images
 OMNet_Pytorch-main/README.md
 
+# added because of the UTOPIC-main Master
+UTOPIC-main/outputs
+UTOPIC-main/dataset/modelnet40_ply_hdf5_2048
+
 # additions by Cracee
 .idea
 data

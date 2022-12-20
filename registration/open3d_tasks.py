@@ -31,7 +31,7 @@ from util_functions import (
 
 
 def create_virtual_object(
-    object_file="data/t_piece.json",
+    object_file="dataset/t_piece.json",
     camera_serial_number="N36-804-16-BL",
     save_file="",
     save_raw=False,
@@ -245,7 +245,7 @@ def create_mesh_from_point_cloud(point_cloud, visualize=True, mode="alpha"):
     :param mode: ["poisson", "alpha", "ball_pivot"] The chosen extrapolation mode
     :return: the newly generated mesh
     """
-    # bunny = o3d.data.BunnyMesh()
+    # bunny = o3d.dataset.BunnyMesh()
     # meshi = o3d.io.read_triangle_mesh(bunny.path)
 
     if mode == "poisson":
