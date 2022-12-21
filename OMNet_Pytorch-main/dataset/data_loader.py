@@ -117,18 +117,18 @@ def fetch_dataloader(params):
     )
     train_transforms, test_transforms = fetch_transform(params)
     if params.dataset_type == "modelnet_os":
-        dataset_path = "./dataset/dataset/modelnet_os"
+        dataset_path = "./dataset/data/modelnet_os"
         train_categories = [
             line.rstrip("\n")
-            for line in open("./dataset/dataset/modelnet40_half1_rm_rotate.txt")
+            for line in open("./dataset/data/modelnet40_half1_rm_rotate.txt")
         ]
         val_categories = [
             line.rstrip("\n")
-            for line in open("./dataset/dataset/modelnet40_half1_rm_rotate.txt")
+            for line in open("./dataset/data/modelnet40_half1_rm_rotate.txt")
         ]
         test_categories = [
             line.rstrip("\n")
-            for line in open("./dataset/dataset/modelnet40_half2_rm_rotate.txt")
+            for line in open("./dataset/data/modelnet40_half2_rm_rotate.txt")
         ]
         train_categories.sort()
         val_categories.sort()
@@ -159,15 +159,15 @@ def fetch_dataloader(params):
         dataset_path = "./dataset/dataset/modelnet_ts"
         train_categories = [
             line.rstrip("\n")
-            for line in open("./dataset/dataset/modelnet40_half1_rm_rotate.txt")
+            for line in open("./dataset/dataset/modelnet40_half1_rm_rotate.txt.txt")
         ]
         val_categories = [
             line.rstrip("\n")
-            for line in open("./dataset/dataset/modelnet40_half1_rm_rotate.txt")
+            for line in open("./dataset/dataset/modelnet40_half1_rm_rotate.txt.txt")
         ]
         test_categories = [
             line.rstrip("\n")
-            for line in open("./dataset/dataset/modelnet40_half2_rm_rotate.txt")
+            for line in open("./dataset/dataset/modelnet40_half2_rm_rotate.txt.txt")
         ]
         train_categories.sort()
         val_categories.sort()

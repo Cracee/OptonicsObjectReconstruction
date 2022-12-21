@@ -46,7 +46,7 @@ def load_point_clouds():
     """
     pcds = []
     for i in range(7):
-        path = "dataset/7_cylin_order/cluster_" + str(i) + ".pcd"
+        path = "data/7_RAMP_order/cluster_" + str(i) + ".pcd"
         pcd = o3d.io.read_point_cloud(path)
         pcd_down = preprocess_point_cloud(pcd)
         pcds.append(pcd_down)
@@ -143,8 +143,8 @@ def full_registration(
     return pose_graph
 
 
-# pcds_down = load_point_clouds()
-pcds_down = load_synthetic_pcd()
+pcds_down = load_point_clouds()
+# pcds_down = load_synthetic_pcd()
 o3d.visualization.draw_geometries(pcds_down)
 
 print("Full registration ...")

@@ -91,6 +91,8 @@ def test(model, manager):
 
 
 if __name__ == "__main__":
+    torch.cuda.empty_cache()
+
     # Load the parameters
     args = parser.parse_args()
     json_path = os.path.join(args.model_dir, "params.json")

@@ -77,4 +77,4 @@ def generate_fragments(object_type, n):
     return all_fragments
 
 
-_ = generate_fragments("rampshere", 5)
+# _ = generate_fragments("rampshere", 5)

@@ -1,8 +1,8 @@
 {
     "exp_name": "omnet",
     "model_dir": "experiments/experiment_omnet",
-    "dataset_type": "modelnet_os",
-    "transform_type": "modelnet_os_prnet_clean",
+    "dataset_type": "rampshere",
+    "transform_type": "rampshere_og",
     "net_type": "omnet",
     "loss_type": "omnet",
     "eval_type": [
