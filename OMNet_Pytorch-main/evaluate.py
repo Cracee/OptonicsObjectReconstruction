@@ -21,6 +21,7 @@ parser.add_argument(
 parser.add_argument(
     "--restore_file",
     type=str,
+    default="./experiments/experiment_omnet/val_model_best.pth",
     help="name of the file in --model_dir containing weights to load",
 )
 

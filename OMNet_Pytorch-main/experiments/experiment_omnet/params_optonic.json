@@ -1,7 +1,7 @@
 {
     "exp_name": "omnet",
     "model_dir": "experiments/experiment_omnet",
-    "dataset_type": "rampshere",
+    "dataset_type": "rampshere_big",
     "transform_type": "rampshere_og",
     "net_type": "omnet",
     "loss_type": "omnet",

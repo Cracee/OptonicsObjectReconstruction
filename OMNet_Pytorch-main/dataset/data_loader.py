@@ -109,6 +109,83 @@ class ModelNetNpy(Dataset):
         return len(self._data)
 
 
+class VirtualObjects(Dataset):
+    def __init__(
+        self,
+        dataset_path: str,
+        dataset_mode: str,
+        subset: str = "train",
+        categories=None,
+        transform=None,
+    ):
+        """Virtual Objects created by Gregor in dataset form."""
+        self._logger = logging.getLogger(self.__class__.__name__)
+        self._root = dataset_path
+        self._subset = subset
+
+        metadata_fpath = os.path.join(
+            self._root, "modelnet_{}_{}.pickle".format(dataset_mode, subset)
+        )
+        self._logger.info(
+            "Loading dataset from {} for {}".format(metadata_fpath, subset)
+        )
+
+        if not os.path.exists(os.path.join(dataset_path)):
+            assert FileNotFoundError("Not found dataset_path: {}".format(dataset_path))
+
+        with open(os.path.join(dataset_path, "shape_names.txt")) as fid:
+            self._classes = [label.strip() for label in fid]
+            self._category2idx = {e[1]: e[0] for e in enumerate(self._classes)}
+            self._idx2category = self._classes
+
+        if categories is not None:
+            categories_idx = [self._category2idx[c] for c in categories]
+            self._logger.info("Categories used: {}.".format(categories_idx))
+            self._classes = categories
+        else:
+            categories_idx = None
+            self._logger.info("Using all categories.")
+
+        self._data = self._read_folder(metadata_fpath)
+
+        self._transform = transform
+        self._logger.info("Loaded {} {} instances.".format(len(self._data), subset))
+
+    @property
+    def classes(self):
+        return self._classes
+
+    @staticmethod
+    def _read_folder(folder_name):
+        onlyfiles = [f for f in os.listdir(folder_name) if os.isfile(os.join(folder_name, f))]
+
+        return onlyfiles
+
+    def to_category(self, i):
+        return self._idx2category[i]
+
+    def __getitem__(self, item):
+
+        data_path = self._data[item]
+
+        # load and process dataset
+        points = np.load(data_path)
+        idx = np.array(
+            int(os.path.splitext(os.path.basename(data_path))[0].split("_")[1])
+        )
+        label = np.array(
+            int(os.path.splitext(os.path.basename(data_path))[0].split("_")[3])
+        )
+        sample = {"points": points, "label": label, "idx": idx}
+
+        if self._transform:
+            sample = self._transform(sample)
+        return sample
+
+    def __len__(self):
+        return len(self._data)
+
+
 def fetch_dataloader(params):
     _logger.info(
         "Dataset type: {}, transform type: {}".format(
@@ -194,6 +271,44 @@ def fetch_dataloader(params):
             transform=test_transforms,
         )
 
+    elif params.dataset_type == "rampshere_big":
+        dataset_path = "./dataset/data/modelnet_os"
+        train_categories = [
+            line.rstrip("\n")
+            for line in open("./dataset/data/modelnet40_half1_rm_rotate.txt")
+        ]
+        val_categories = [
+            line.rstrip("\n")
+            for line in open("./dataset/data/modelnet40_half1_rm_rotate.txt")
+        ]
+        test_categories = [
+            line.rstrip("\n")
+            for line in open("./dataset/data/modelnet40_half2_rm_rotate.txt")
+        ]
+        train_categories.sort()
+        val_categories.sort()
+        test_categories.sort()
+        train_ds = ModelNetNpy(
+            dataset_path,
+            dataset_mode="os",
+            subset="train",
+            categories=train_categories,
+            transform=train_transforms,
+        )
+        val_ds = ModelNetNpy(
+            dataset_path,
+            dataset_mode="os",
+            subset="val",
+            categories=val_categories,
+            transform=test_transforms,
+        )
+        test_ds = ModelNetNpy(
+            dataset_path,
+            dataset_mode="os",
+            subset="test",
+            categories=test_categories,
+            transform=test_transforms,
+        )
     else:
         raise NotImplementedError
 
