@@ -1,4 +1,5 @@
 import os
+from os.path import isfile, join
 import pickle
 import random
 import logging
@@ -6,6 +7,7 @@ import logging
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
+from open3d import io
 
 from dataset.transformations import fetch_transform
 
@@ -119,6 +121,8 @@ class VirtualObjects(Dataset):
         transform=None,
     ):
         """Virtual Objects created by Gregor in dataset form."""
+        dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/registration/data/14_ramp_order"
+
         self._logger = logging.getLogger(self.__class__.__name__)
         self._root = dataset_path
         self._subset = subset
@@ -129,24 +133,13 @@ class VirtualObjects(Dataset):
         self._logger.info(
             "Loading dataset from {} for {}".format(metadata_fpath, subset)
         )
-
         if not os.path.exists(os.path.join(dataset_path)):
             assert FileNotFoundError("Not found dataset_path: {}".format(dataset_path))
 
-        with open(os.path.join(dataset_path, "shape_names.txt")) as fid:
-            self._classes = [label.strip() for label in fid]
-            self._category2idx = {e[1]: e[0] for e in enumerate(self._classes)}
-            self._idx2category = self._classes
-
-        if categories is not None:
-            categories_idx = [self._category2idx[c] for c in categories]
-            self._logger.info("Categories used: {}.".format(categories_idx))
-            self._classes = categories
-        else:
-            categories_idx = None
-            self._logger.info("Using all categories.")
-
-        self._data = self._read_folder(metadata_fpath)
+        self._data = self._read_folder(dataset_path)
+        self._classes = None
+        self._idx2category = None
+        self.eval_type = ["test"]
 
         self._transform = transform
         self._logger.info("Loaded {} {} instances.".format(len(self._data), subset))
@@ -157,7 +150,7 @@ class VirtualObjects(Dataset):
 
     @staticmethod
     def _read_folder(folder_name):
-        onlyfiles = [f for f in os.listdir(folder_name) if os.isfile(os.join(folder_name, f))]
+        onlyfiles = [f for f in os.listdir(folder_name) if isfile(join(folder_name, f))]
 
         return onlyfiles
 
@@ -167,16 +160,21 @@ class VirtualObjects(Dataset):
     def __getitem__(self, item):
 
         data_path = self._data[item]
+        meta_path = self._root + "/" + data_path
+        point_cloud = io.read_point_cloud(meta_path)
+
+        numpy_points = np.asarray(point_cloud.points)
+
+        numpy_points = np.concatenate((numpy_points, numpy_points), axis=1)
+
+        a = np.random.choice(numpy_points.shape[0], 2048)
+        numpy_points = numpy_points[a]
+
 
         # load and process dataset
-        points = np.load(data_path)
-        idx = np.array(
-            int(os.path.splitext(os.path.basename(data_path))[0].split("_")[1])
-        )
-        label = np.array(
-            int(os.path.splitext(os.path.basename(data_path))[0].split("_")[3])
-        )
-        sample = {"points": points, "label": label, "idx": idx}
+        #points = np.load(data_path)
+        idx = int(data_path[-5:-4])
+        sample = {"points": numpy_points, "label": np.array([0]), "idx": idx}
 
         if self._transform:
             sample = self._transform(sample)
@@ -236,15 +234,15 @@ def fetch_dataloader(params):
         dataset_path = "./dataset/dataset/modelnet_ts"
         train_categories = [
             line.rstrip("\n")
-            for line in open("./dataset/dataset/modelnet40_half1_rm_rotate.txt.txt")
+            for line in open("./dataset/dataset/modelnet40_half1_rm_rotate.txt")
         ]
         val_categories = [
             line.rstrip("\n")
-            for line in open("./dataset/dataset/modelnet40_half1_rm_rotate.txt.txt")
+            for line in open("./dataset/dataset/modelnet40_half1_rm_rotate.txt")
         ]
         test_categories = [
             line.rstrip("\n")
-            for line in open("./dataset/dataset/modelnet40_half2_rm_rotate.txt.txt")
+            for line in open("./dataset/dataset/modelnet40_half2_rm_rotate.txt")
         ]
         train_categories.sort()
         val_categories.sort()
@@ -273,36 +271,12 @@ def fetch_dataloader(params):
 
     elif params.dataset_type == "rampshere_big":
         dataset_path = "./dataset/data/modelnet_os"
-        train_categories = [
-            line.rstrip("\n")
-            for line in open("./dataset/data/modelnet40_half1_rm_rotate.txt")
-        ]
-        val_categories = [
-            line.rstrip("\n")
-            for line in open("./dataset/data/modelnet40_half1_rm_rotate.txt")
-        ]
         test_categories = [
             line.rstrip("\n")
             for line in open("./dataset/data/modelnet40_half2_rm_rotate.txt")
         ]
-        train_categories.sort()
-        val_categories.sort()
         test_categories.sort()
-        train_ds = ModelNetNpy(
-            dataset_path,
-            dataset_mode="os",
-            subset="train",
-            categories=train_categories,
-            transform=train_transforms,
-        )
-        val_ds = ModelNetNpy(
-            dataset_path,
-            dataset_mode="os",
-            subset="val",
-            categories=val_categories,
-            transform=test_transforms,
-        )
-        test_ds = ModelNetNpy(
+        test_ds = VirtualObjects(
             dataset_path,
             dataset_mode="os",
             subset="test",
@@ -314,9 +288,9 @@ def fetch_dataloader(params):
 
     dataloaders = {}
     params.prefetch_factor = 5
-    # add defalt train dataset loader
+    # add default train dataset loader
     train_dl = DataLoader(
-        train_ds,
+        test_ds,
         batch_size=params.train_batch_size,
         shuffle=True,
         num_workers=params.num_workers,
@@ -327,31 +301,17 @@ def fetch_dataloader(params):
     )
     dataloaders["train"] = train_dl
 
-    # chosse val or test dataset loader for evaluate
-    for split in ["val", "test"]:
-        if split in params.eval_type:
-            if split == "val":
-                dl = DataLoader(
-                    val_ds,
-                    batch_size=params.eval_batch_size,
-                    shuffle=False,
-                    num_workers=params.num_workers,
-                    pin_memory=params.cuda,
-                    prefetch_factor=params.prefetch_factor,
-                )
-            elif split == "test":
-                dl = DataLoader(
-                    test_ds,
-                    batch_size=params.eval_batch_size,
-                    shuffle=False,
-                    num_workers=params.num_workers,
-                    pin_memory=params.cuda,
-                    prefetch_factor=params.prefetch_factor,
-                )
-            else:
-                raise ValueError("Unknown eval_type in params, should in [val, test]")
-            dataloaders[split] = dl
-        else:
-            dataloaders[split] = None
+    # choose val or test dataset loader for evaluate
+    dl = DataLoader(
+        test_ds,
+        batch_size=params.eval_batch_size,
+        shuffle=False,
+        num_workers=params.num_workers,
+        pin_memory=params.cuda,
+        prefetch_factor=params.prefetch_factor,
+    )
+
+    dataloaders["test"] = dl
+    dataloaders["val"] = dl
 
     return dataloaders

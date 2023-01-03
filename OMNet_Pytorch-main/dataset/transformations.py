@@ -1009,7 +1009,29 @@ def fetch_transform(params):
             ),
             ShufflePoints(),
         ]
+    elif params.transform_type == "rampshere_og":
+        train_transforms = [
+            SplitSourceRef(mode="hdf"),
+            ShufflePoints(),
+            PRNetTorch(
+                num_points=params.num_points,
+                rot_mag=params.rot_mag,
+                trans_mag=params.trans_mag,
+                add_noise=False,
+            ),
+        ]
 
+        test_transforms = [
+            SetDeterministic(),
+            SplitSourceRef(mode="hdf"),
+            ShufflePoints(),
+            PRNetTorch(
+                num_points=params.num_points,
+                rot_mag=params.rot_mag,
+                trans_mag=params.trans_mag,
+                add_noise=False,
+            ),
+        ]
     else:
         raise NotImplementedError
 

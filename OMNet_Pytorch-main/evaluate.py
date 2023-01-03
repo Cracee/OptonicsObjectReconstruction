@@ -10,6 +10,7 @@ import model.net as net
 from common import utils
 from common.manager import Manager
 from loss.loss import compute_loss, compute_metrics
+from visualize.visualizer import visualize_result
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -45,6 +46,8 @@ def test(model, manager):
                 data_batch = utils.tensor_gpu(data_batch)
                 # compute model output
                 output_batch = model(data_batch)
+
+                visualize_result(output_batch, data_batch)
 
                 # real batch size
                 batch_size = data_batch["points_src"].size()[0]
@@ -96,7 +99,7 @@ if __name__ == "__main__":
 
     # Load the parameters
     args = parser.parse_args()
-    json_path = os.path.join(args.model_dir, "params.json")
+    json_path = os.path.join(args.model_dir, "params_optonic.json")
     assert os.path.isfile(json_path), "No json configuration file found at {}".format(
         json_path
     )
