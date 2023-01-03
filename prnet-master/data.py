@@ -5,6 +5,8 @@ import os
 import sys
 import glob
 import h5py
+import random
+import open3d as o3d
 import numpy as np
 from scipy.spatial.transform import Rotation
 from torch.utils.data import Dataset
@@ -45,6 +47,22 @@ def load_data(partition):
     all_data = np.concatenate(all_data, axis=0)
     all_label = np.concatenate(all_label, axis=0)
     return all_data, all_label
+
+
+def load_custom_data(path, num_points):
+    all_data = []
+    all_labels = []
+
+    # write the load function here
+    mesh = o3d.io.read_triangle_mesh(path)
+    mesh.compute_vertex_normals()
+    # shift = random.randint(-1000, 1000)
+    pcd = mesh.sample_points_poisson_disk(number_of_points=num_points, init_factor=5)
+
+    # write the conversion to numpy here
+    all_data.append(pcd.points)
+    all_labels.append("rampshere")
+    return all_data, all_labels
 
 
 def translate_pointcloud(pointcloud):
@@ -109,6 +127,109 @@ class ModelNet40(Dataset):
         self.num_points = num_points
         self.num_subsampled_points = num_subsampled_points
         self.partition = partition
+        self.gaussian_noise = gaussian_noise
+        self.unseen = unseen
+        self.label = self.label.squeeze()
+        self.rot_factor = rot_factor
+        if num_points != num_subsampled_points:
+            self.subsampled = True
+        else:
+            self.subsampled = False
+        if self.unseen:
+            #  simulate testing on first 20 categories while training on last 20 categories
+            if self.partition == "test":
+                self.data = self.data[self.label >= 20]
+                self.label = self.label[self.label >= 20]
+            elif self.partition == "train":
+                self.data = self.data[self.label < 20]
+                self.label = self.label[self.label < 20]
+
+    def __getitem__(self, item):
+        pointcloud = self.data[item][: self.num_points]
+        if self.partition != "train":
+            np.random.seed(item)
+        anglex = np.random.uniform() * np.pi / self.rot_factor
+        angley = np.random.uniform() * np.pi / self.rot_factor
+        anglez = np.random.uniform() * np.pi / self.rot_factor
+        cosx = np.cos(anglex)
+        cosy = np.cos(angley)
+        cosz = np.cos(anglez)
+        sinx = np.sin(anglex)
+        siny = np.sin(angley)
+        sinz = np.sin(anglez)
+        Rx = np.array([[1, 0, 0], [0, cosx, -sinx], [0, sinx, cosx]])
+        Ry = np.array([[cosy, 0, siny], [0, 1, 0], [-siny, 0, cosy]])
+        Rz = np.array([[cosz, -sinz, 0], [sinz, cosz, 0], [0, 0, 1]])
+        R_ab = Rx.dot(Ry).dot(Rz)
+        R_ba = R_ab.T
+        translation_ab = np.array(
+            [
+                np.random.uniform(-0.5, 0.5),
+                np.random.uniform(-0.5, 0.5),
+                np.random.uniform(-0.5, 0.5),
+            ]
+        )
+        translation_ba = -R_ba.dot(translation_ab)
+
+        pointcloud1 = pointcloud.T
+
+        rotation_ab = Rotation.from_euler("zyx", [anglez, angley, anglex])
+        pointcloud2 = rotation_ab.apply(pointcloud1.T).T + np.expand_dims(
+            translation_ab, axis=1
+        )
+
+        euler_ab = np.asarray([anglez, angley, anglex])
+        euler_ba = -euler_ab[::-1]
+
+        pointcloud1 = np.random.permutation(pointcloud1.T).T
+        pointcloud2 = np.random.permutation(pointcloud2.T).T
+
+        if self.gaussian_noise:
+            pointcloud1 = jitter_pointcloud(pointcloud1)
+            pointcloud2 = jitter_pointcloud(pointcloud2)
+
+        if self.subsampled:
+            pointcloud1, pointcloud2 = farthest_subsample_points(
+                pointcloud1,
+                pointcloud2,
+                num_subsampled_points=self.num_subsampled_points,
+            )
+
+        return (
+            pointcloud1.astype("float32"),
+            pointcloud2.astype("float32"),
+            R_ab.astype("float32"),
+            translation_ab.astype("float32"),
+            R_ba.astype("float32"),
+            translation_ba.astype("float32"),
+            euler_ab.astype("float32"),
+            euler_ba.astype("float32"),
+        )
+
+    def __len__(self):
+        return self.data.shape[0]
+
+
+class GregorDataSet(Dataset):
+    def __init__(
+        self,
+        num_points,
+        num_subsampled_points=768,
+        path="C:/Users/Grego/Documents/Universität/Master V/Optonics Projekt/3D Objekte/Ramp_sphere_upscale.stl",
+        gaussian_noise=False,
+        unseen=False,
+        rot_factor=4,
+        category=None,
+    ):
+        super(GregorDataSet, self).__init__()
+        self.data, self.label = load_custom_data(path, num_points)
+
+        if category is not None:
+            self.data = self.data[self.label == category]
+            self.label = self.label[self.label == category]
+        self.num_points = num_points
+        self.num_subsampled_points = num_subsampled_points
+        self.path = path
         self.gaussian_noise = gaussian_noise
         self.unseen = unseen
         self.label = self.label.squeeze()
