@@ -1,4 +1,3 @@
-pre-commit
 open3d
 nxlib==3.4.715
 coloredlogs
