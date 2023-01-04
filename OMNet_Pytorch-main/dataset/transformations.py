@@ -628,6 +628,9 @@ class RealObjectsTorch:
 
         src = sample["points_src"]
         ref = sample["points_ref"]
+        src_raw = sample["points_src_raw"]
+        ref_raw = sample["points_ref_raw"]
+        raw = sample["points_raw"]
 
         # Apply to source to get reference
         # transform_gt would be a 3, 4 ndarray
@@ -637,14 +640,22 @@ class RealObjectsTorch:
 
         a = np.random.choice(src.shape[0], self.num_points)
         b = np.random.choice(ref.shape[0], self.num_points)
+        c = np.random.choice(ref.shape[0], self.num_points*2)
+
         src = src[a]
         ref = ref[b]
+        src_raw = src_raw[a]
+        ref_raw = ref_raw[b]
+        raw = raw[c]
 
         src = torch.from_numpy(src)
         ref = torch.from_numpy(ref)
 
         sample["points_src"] = src
         sample["points_ref"] = ref
+        sample["points_src_raw"] = src_raw
+        sample["points_ref_raw"] = ref_raw
+        sample["points_raw"] = raw
 
         if sample["points_src"].size()[0] == 1:
             sample["points_src"] = sample["points_src"].squeeze(0)

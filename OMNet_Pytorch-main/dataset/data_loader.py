@@ -164,6 +164,8 @@ class VirtualObjects(Dataset):
         meta_path = self._root + "/" + data_path
         point_cloud = io.read_point_cloud(meta_path)
         numpy_points_1 = np.asarray(point_cloud.points)
+        numpy_points_1 = (numpy_points_1 - np.min(numpy_points_1)) / (np.max(numpy_points_1) - np.min(numpy_points_1))
+        numpy_points_1 = (numpy_points_1 * 2) - 1
 
         # load the second item
         x = (item + 1) % len(self._data)
@@ -172,6 +174,8 @@ class VirtualObjects(Dataset):
         meta_path = self._root + "/" + data_path
         point_cloud = io.read_point_cloud(meta_path)
         numpy_points_2 = np.asarray(point_cloud.points)
+        numpy_points_2 = (numpy_points_2 - np.min(numpy_points_2)) / (np.max(numpy_points_2) - np.min(numpy_points_2))
+        numpy_points_2 = (numpy_points_2 * 2) - 1
 
         idx = int(data_path[-5:-4])
         sample = {"points_1": numpy_points_1, "points_2": numpy_points_2, "label": np.array([0]), "idx": idx}
