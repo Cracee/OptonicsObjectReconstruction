@@ -16,11 +16,11 @@ The repository of the Master Project of Cracee. Goal is to reconstruct 3D Object
 
 For this project, there are different subfolders:
 
-In `Registration` you can find the 1. Try, with manual ICP Algorithms, to puzzle together an object from different subparts.
+In `Registration` you can find the 1. try, with manual ICP Algorithms, to puzzle together an object from different subparts.
 
 In `nxlib_tutorials` you can find some Tutorials from the Ensenso SDK Website. They are used to test the environment, if camera communication works etc.
 
-The `[OMNet_Pytorch-main]`, [prnet-master] and [UTOPIC-main] folders contain DL approaches, which will get fitted to this project in the next days and weeks. 
+The [OMNet_Pytorch-main], [prnet-master] and [UTOPIC-main] folders contain DL approaches, which will get fitted to this project in the next days and weeks. 
 
 [OMNet_Pytorch-main]: https://github.com/hxwork/OMNet_Pytorch
 [prnet-master]: https://github.com/WangYueFt/prnet
