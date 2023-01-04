@@ -171,6 +171,14 @@ class SplitSourceRef:
             sample["points_src_raw"] = sample["points_src"].copy().astype(np.float32)
             sample["points_ref_raw"] = sample["points_ref"].copy().astype(np.float32)
 
+        elif self.mode == "fragments":
+            sample["points_src"] = sample["points"].astype(np.float32)[:, :3].copy()
+            sample["points_ref"] = sample.pop("points").astype(np.float32)[:, 3:6]
+
+            sample["points_raw"] = np.concatenate((sample["points_src"].copy(), sample["points_ref"].copy()), axis=0)
+
+            sample["points_src_raw"] = sample["points_src"].copy().astype(np.float32)
+            sample["points_ref_raw"] = sample["points_ref"].copy().astype(np.float32)
         else:
             raise NotImplementedError
 
@@ -606,6 +614,45 @@ class PRNetTorch:
         return sample
 
 
+class RealObjectsTorch:
+    def __init__(
+        self,
+        num_points,
+    ):
+        self.num_points = num_points
+
+    def __call__(self, sample):
+
+        if "deterministic" in sample and sample["deterministic"]:
+            np.random.seed(sample["idx"])
+
+        src = sample["points_src"]
+        ref = sample["points_ref"]
+
+        # Apply to source to get reference
+        # transform_gt would be a 3, 4 ndarray
+        sample["transform_gt"] = np.zeros((3, 4), np.float32)
+        # pose_gt would be a 7 ndarray
+        sample["pose_gt"] = np.zeros(7, np.float32)
+
+        a = np.random.choice(src.shape[0], self.num_points)
+        b = np.random.choice(ref.shape[0], self.num_points)
+        src = src[a]
+        ref = ref[b]
+
+        src = torch.from_numpy(src)
+        ref = torch.from_numpy(ref)
+
+        sample["points_src"] = src
+        sample["points_ref"] = ref
+
+        if sample["points_src"].size()[0] == 1:
+            sample["points_src"] = sample["points_src"].squeeze(0)
+            sample["points_ref"] = sample["points_ref"].squeeze(0)
+
+        return sample
+
+
 class PRNetTorchOverlapRatio:
     def __init__(
         self,
@@ -1009,6 +1056,7 @@ def fetch_transform(params):
             ),
             ShufflePoints(),
         ]
+
     elif params.transform_type == "rampshere_og":
         train_transforms = [
             SplitSourceRef(mode="hdf"),
@@ -1023,13 +1071,10 @@ def fetch_transform(params):
 
         test_transforms = [
             SetDeterministic(),
-            SplitSourceRef(mode="hdf"),
+            SplitSourceRef(mode="fragments"),
             ShufflePoints(),
-            PRNetTorch(
-                num_points=params.num_points,
-                rot_mag=params.rot_mag,
-                trans_mag=params.trans_mag,
-                add_noise=False,
+            RealObjectsTorch(
+                num_points=params.num_points
             ),
         ]
     else:

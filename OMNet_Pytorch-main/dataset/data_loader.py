@@ -159,16 +159,31 @@ class VirtualObjects(Dataset):
 
     def __getitem__(self, item):
 
+        # load the first item
         data_path = self._data[item]
         meta_path = self._root + "/" + data_path
         point_cloud = io.read_point_cloud(meta_path)
+        numpy_points_1 = np.asarray(point_cloud.points)
 
-        numpy_points = np.asarray(point_cloud.points)
+        # load the second item
+        data_path = self._data[(item + 1) % len(self._data)]
+        meta_path = self._root + "/" + data_path
+        point_cloud = io.read_point_cloud(meta_path)
+        numpy_points_2 = np.asarray(point_cloud.points)
 
-        numpy_points = np.concatenate((numpy_points, numpy_points), axis=1)
+        # sadly, the point clouds need the same amount of points for properly working
+        if numpy_points_1.size()[0] > numpy_points_2.size()[0]:
+           number = numpy_points_2.size()[0]
+           a = np.random.choice(numpy_points_1.shape[0], number)
+           numpy_points_1 = numpy_points_1[a]
+        elif numpy_points_1.size()[0] < numpy_points_2.size()[0]:
+            number = numpy_points_1.size()[0]
+            a = np.random.choice(numpy_points_2.shape[0], number)
+            numpy_points_2 = numpy_points_2[a]
+        else:
+            print("Can you believe it? They actually have the same amount of points!")
 
-        a = np.random.choice(numpy_points.shape[0], 2048)
-        numpy_points = numpy_points[a]
+        numpy_points = np.concatenate((numpy_points_1, numpy_points_2), axis=1)
 
 
         # load and process dataset
