@@ -10,7 +10,7 @@
 
 # <span id='intro'>Introduction</span>
 
-The repository of the Master Project of Cracee. Goal is to reconstruct 3D Objects via a top view in bins.
+The repository of the Master Project of Cracee. Goal is to reconstruct 3D Objects via a top view in bins. You can get a lot of point cloud fragments by the camera system we are using. From these fragments it should be possible to re-puzzle the object. 
 
 # <span id='sub'>Subfolder Explanation</span>
 
