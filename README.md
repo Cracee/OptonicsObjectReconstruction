@@ -20,4 +20,6 @@ In Registration you can find the 1. Try, with manual ICP Algorithms, to puzzle t
 
 In nxlib_tutorials you can find some Tutorials from the Ensenso SDK Website. They are used to test the environment, if camera communication works etc.
 
-The OMNet_Pytorch-main, prnet-master and UTOPIC-main folders contain DL approaches, which will get fitted to this project in the next days and weeks. 
+The OMNet_Pytorch-main [omnet], prnet-master and UTOPIC-main folders contain DL approaches, which will get fitted to this project in the next days and weeks. 
+
+[omnet]: https://github.com/hxwork/OMNet_Pytorch
