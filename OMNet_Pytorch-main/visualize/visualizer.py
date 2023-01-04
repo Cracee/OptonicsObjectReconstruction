@@ -1,6 +1,7 @@
 import torch
 import open3d as o3d
 from common import se3
+import numpy as np
 
 
 def translate_np_to_pcd(point_cloud):
@@ -9,21 +10,14 @@ def translate_np_to_pcd(point_cloud):
     return pcd
 
 
-def visualize_foursome(np_pairs):
-
-    for item in np_pairs:
-        src = item[0][0].cpu().numpy()
-        cls = item[1][0].cpu().numpy()
-        print(src.shape)
-        print(cls.shape)
-
-        src = translate_np_to_pcd(src)
-        cls_1 = translate_np_to_pcd(cls[0])
-        cls_2 = translate_np_to_pcd(cls[1])
-        o3d.visualization.draw_geometries([src])
-        o3d.visualization.draw_geometries([cls_1])
-        o3d.visualization.draw_geometries([cls_2])
-        o3d.visualization.draw_geometries([src, cls_1, cls_2])
+def generate_pointcloud(path, number_of_points):
+    mesh = o3d.io.read_triangle_mesh(path)
+    mesh.compute_vertex_normals()
+    pcd = mesh.sample_points_poisson_disk(number_of_points=number_of_points, init_factor=5)
+    numpy_pcd = np.asarray(pcd.points)
+    numpy_pcd = (numpy_pcd - np.min(numpy_pcd)) / (np.max(numpy_pcd) - np.min(numpy_pcd))
+    numpy_pcd = (numpy_pcd * 2) - 1
+    return numpy_pcd
 
 
 def visualize_result(net_output, data_batch):
@@ -38,16 +32,13 @@ def visualize_result(net_output, data_batch):
         item = points_transformed[i]
         item2 = points_src[i]
         ref = points_ref[i]
-        print("We attempt")
         point = translate_np_to_pcd(item)
+        point.paint_uniform_color([0.0, 1.0, 0.0])
         point2 = translate_np_to_pcd(item2)
+        point2.paint_uniform_color([1.0, 0.0, 0.0])
         ref_point = translate_np_to_pcd(ref)
-        o3d.visualization.draw_geometries([point])
+        ref_point.paint_uniform_color([0.0, 0.0, 1.0])
+
         o3d.visualization.draw_geometries([point, point2])
         o3d.visualization.draw_geometries([point, ref_point])
-    print("finished")
-    src = translate_np_to_pcd(points_src[0])
-    raw = translate_np_to_pcd(points_ref[0])
-
-    o3d.visualization.draw_geometries([src, raw])
 

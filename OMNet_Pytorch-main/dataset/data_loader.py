@@ -11,6 +11,8 @@ from open3d import io
 
 from dataset.transformations import fetch_transform
 
+from visualize.visualizer import generate_pointcloud
+
 _logger = logging.getLogger(__name__)
 
 
@@ -121,7 +123,7 @@ class VirtualObjects(Dataset):
         transform=None,
     ):
         """Virtual Objects created by Gregor in dataset form."""
-        dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/registration/data/14_ramp_order"
+        dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/registration/data/7_cylin_order"
 
         self._logger = logging.getLogger(self.__class__.__name__)
         self._root = dataset_path
@@ -187,6 +189,61 @@ class VirtualObjects(Dataset):
     def __len__(self):
         return len(self._data)
 
+
+class SyntheticObjects(Dataset):
+    def __init__(
+        self,
+        subset: str = "train",
+        transform=None,
+        number_of_points=768,
+    ):
+        """Virtual Objects created by Gregor in dataset form."""
+        dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/registration/data/7_cylin_order"
+
+        self._logger = logging.getLogger(self.__class__.__name__)
+        self._root = dataset_path
+        self._subset = subset
+        self.number_of_points = number_of_points
+
+        if not os.path.exists(os.path.join(dataset_path)):
+            assert FileNotFoundError("Not found dataset_path: {}".format(dataset_path))
+
+        self._data = self._read_folder(dataset_path)
+        self._classes = None
+        self._idx2category = None
+        self.eval_type = ["test"]
+
+        self._transform = transform
+        self._logger.info("Loaded {} {} instances.".format(len(self._data), subset))
+
+    @staticmethod
+    def _read_folder(folder_name):
+        onlyfiles = [f for f in os.listdir(folder_name) if isfile(join(folder_name, f))]
+
+        return onlyfiles
+
+    def to_category(self, i):
+        return self._idx2category[i]
+
+    def __getitem__(self, item):
+
+        data_path = self._root
+
+        # load the first item
+        numpy_pcd = generate_pointcloud(data_path, self.number_of_points)
+
+        # load the second item
+        numpy_pcd2 = generate_pointcloud(data_path, self.number_of_points)
+
+        idx = int(data_path[-5:-4])
+        sample = {"points_1": numpy_pcd, "points_2": numpy_pcd2, "label": np.array([0]), "idx": idx}
+
+        if self._transform:
+            sample = self._transform(sample)
+        return sample
+
+    def __len__(self):
+        return len(self._data)
 
 def fetch_dataloader(params):
     _logger.info(
@@ -287,6 +344,16 @@ def fetch_dataloader(params):
             categories=test_categories,
             transform=test_transforms,
         )
+
+    elif params.dataset_type == "rampshere_synthetic":
+        dataset_path = "./dataset/data/modelnet_os"
+        test_ds = SyntheticObjects(
+            dataset_path,
+            subset="test",
+            transform=test_transforms,
+            number_of_points=params.num_points
+        )
+
     else:
         raise NotImplementedError
 

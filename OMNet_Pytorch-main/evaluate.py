@@ -45,10 +45,11 @@ def test(model, manager):
                 # move to GPU if available
                 data_batch = utils.tensor_gpu(data_batch)
 
-                print("The minimum number of the input is: " + str(torch.min(data_batch["points_src"]).item()))
-                print("The maximum number of the input is: " + str(torch.max(data_batch["points_src"]).item()))
                 # compute model output
                 output_batch = model(data_batch)
+
+                #print("The minimum number of the transformation is: " + str(torch.min(output_batch["transform_pair"][1]).item()))
+                #print("The maximum number of the transformation is: " + str(torch.max(output_batch["transform_pair"][1]).item()))
 
                 visualize_result(output_batch, data_batch)
 
@@ -102,7 +103,7 @@ if __name__ == "__main__":
 
     # Load the parameters
     args = parser.parse_args()
-    json_path = os.path.join(args.model_dir, "params.json")
+    json_path = os.path.join(args.model_dir, "params_optonic.json")
     assert os.path.isfile(json_path), "No json configuration file found at {}".format(
         json_path
     )
