@@ -22,6 +22,10 @@ In `nxlib_tutorials` you can find some Tutorials from the Ensenso SDK Website. T
 
 The [OMNet_Pytorch-main], [prnet-master] and [UTOPIC-main] folders contain DL approaches, which will get fitted to this project in the next days and weeks. 
 
+<details><summary>Do not click to open</summary>
+  Got you!
+</details>
+
 [OMNet_Pytorch-main]: https://github.com/hxwork/OMNet_Pytorch
 [prnet-master]: https://github.com/WangYueFt/prnet
 [UTOPIC-main]: https://github.com/ZhileiChen99/UTOPIC
