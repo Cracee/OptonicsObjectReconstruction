@@ -27,6 +27,8 @@ The [OMNet_Pytorch-main], [prnet-master] and [UTOPIC-main] folders contain DL ap
     <li>Got you!</li>
     <li>Now you probably feel ashamed</li>
     <li>But that is ok</li>
+    <li>I would have clicked it too</li>
+    <li>Don't worry, be happy!</li>
   </ul>
 </details>
 
