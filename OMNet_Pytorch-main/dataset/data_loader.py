@@ -166,30 +166,15 @@ class VirtualObjects(Dataset):
         numpy_points_1 = np.asarray(point_cloud.points)
 
         # load the second item
-        data_path = self._data[(item + 1) % len(self._data)]
+        x = (item + 1) % len(self._data)
+        print(x)
+        data_path = self._data[x]
         meta_path = self._root + "/" + data_path
         point_cloud = io.read_point_cloud(meta_path)
         numpy_points_2 = np.asarray(point_cloud.points)
 
-        # sadly, the point clouds need the same amount of points for properly working
-        if numpy_points_1.size()[0] > numpy_points_2.size()[0]:
-           number = numpy_points_2.size()[0]
-           a = np.random.choice(numpy_points_1.shape[0], number)
-           numpy_points_1 = numpy_points_1[a]
-        elif numpy_points_1.size()[0] < numpy_points_2.size()[0]:
-            number = numpy_points_1.size()[0]
-            a = np.random.choice(numpy_points_2.shape[0], number)
-            numpy_points_2 = numpy_points_2[a]
-        else:
-            print("Can you believe it? They actually have the same amount of points!")
-
-        numpy_points = np.concatenate((numpy_points_1, numpy_points_2), axis=1)
-
-
-        # load and process dataset
-        #points = np.load(data_path)
         idx = int(data_path[-5:-4])
-        sample = {"points": numpy_points, "label": np.array([0]), "idx": idx}
+        sample = {"points_1": numpy_points_1, "points_2": numpy_points_2, "label": np.array([0]), "idx": idx}
 
         if self._transform:
             sample = self._transform(sample)

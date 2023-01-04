@@ -18,9 +18,9 @@
     "trans_mag": 0.5,
     "noise_std": 0.01,
     "save_summary_steps": 100,
-    "train_batch_size": 64,
-    "eval_batch_size": 64,
-    "num_workers": 8,
+    "train_batch_size": 10,
+    "eval_batch_size": 10,
+    "num_workers": 1,
     "partial_ratio": [
         0.7,
         0.7

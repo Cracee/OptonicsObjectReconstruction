@@ -172,8 +172,8 @@ class SplitSourceRef:
             sample["points_ref_raw"] = sample["points_ref"].copy().astype(np.float32)
 
         elif self.mode == "fragments":
-            sample["points_src"] = sample["points"].astype(np.float32)[:, :3].copy()
-            sample["points_ref"] = sample.pop("points").astype(np.float32)[:, 3:6]
+            sample["points_src"] = sample.pop("points_1").astype(np.float32)[:, :3]
+            sample["points_ref"] = sample.pop("points_2").astype(np.float32)[:, :3]
 
             sample["points_raw"] = np.concatenate((sample["points_src"].copy(), sample["points_ref"].copy()), axis=0)
 
