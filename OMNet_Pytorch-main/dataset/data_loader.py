@@ -198,6 +198,7 @@ class SyntheticObjects(Dataset):
         number_of_points=768,
     ):
         """Virtual Objects created by Gregor in dataset form."""
+        # path to the 3d Object
         dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/registration/data/7_cylin_order"
 
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -208,22 +209,13 @@ class SyntheticObjects(Dataset):
         if not os.path.exists(os.path.join(dataset_path)):
             assert FileNotFoundError("Not found dataset_path: {}".format(dataset_path))
 
-        self._data = self._read_folder(dataset_path)
+        self._data = dataset_path
         self._classes = None
         self._idx2category = None
         self.eval_type = ["test"]
 
         self._transform = transform
         self._logger.info("Loaded {} {} instances.".format(len(self._data), subset))
-
-    @staticmethod
-    def _read_folder(folder_name):
-        onlyfiles = [f for f in os.listdir(folder_name) if isfile(join(folder_name, f))]
-
-        return onlyfiles
-
-    def to_category(self, i):
-        return self._idx2category[i]
 
     def __getitem__(self, item):
 
@@ -232,11 +224,8 @@ class SyntheticObjects(Dataset):
         # load the first item
         numpy_pcd = generate_pointcloud(data_path, self.number_of_points)
 
-        # load the second item
-        numpy_pcd2 = generate_pointcloud(data_path, self.number_of_points)
-
         idx = int(data_path[-5:-4])
-        sample = {"points_1": numpy_pcd, "points_2": numpy_pcd2, "label": np.array([0]), "idx": idx}
+        sample = {"points_1": numpy_pcd, "points_2": numpy_pcd, "label": np.array([0]), "idx": idx}
 
         if self._transform:
             sample = self._transform(sample)
