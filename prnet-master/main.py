@@ -190,7 +190,7 @@ def main():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=36,
+        default=2,
         metavar="batch_size",
         help="Size of batch)",
     )
@@ -310,7 +310,7 @@ def main():
             batch_size=args.batch_size,
             shuffle=True,
             drop_last=True,
-            num_workers=6,
+            num_workers=1,
         )
         test_loader = DataLoader(
             ModelNet40(
@@ -324,7 +324,7 @@ def main():
             batch_size=args.test_batch_size,
             shuffle=False,
             drop_last=False,
-            num_workers=6,
+            num_workers=1,
         )
     else:
         raise Exception("not implemented")
