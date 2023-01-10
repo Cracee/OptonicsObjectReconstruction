@@ -526,6 +526,12 @@ class PRNetTorch:
         idx = distance.topk(k=k, dim=0, largest=False)[1]  # (batch_size, num_points, k)
         return idx
 
+    def random_corner_partial(self):
+        step = np.random.random(size=(1, 3)) * np.array([[500, 500, 500]])
+        corner = np.array([np.random.choice([1, -1, 2, -2]), np.random.choice([1, -1, 2, -2]), np.random.choice([1, -1, 2, -2])])
+        result = step * corner
+        return result
+
     def __call__(self, sample):
 
         if "deterministic" in sample and sample["deterministic"]:
@@ -567,9 +573,13 @@ class PRNetTorch:
             random_p1 = np.random.random(size=(1, 3)) + np.array(
                 [[500, 500, 500]]
             ) * np.random.choice([1, -1, 1, -1])
+            random_p1 = self.random_corner_partial()
             idx1 = self.knn(src, random_p1, k=768)
-            # np.random.random(size=(1, 3)) + np.array([[500, 500, 500]]) * np.random.choice([1, -1, 2, -2])
-            random_p2 = random_p1
+            random_p2 = np.random.random(size=(1, 3)) + np.array([[500, 500, 500]]) * np.random.choice([1, -1, 2, -2])
+            random_p2 = self.random_corner_partial()
+            print(random_p2)
+            print(random_p1)
+            # random_p2 = random_p1
             idx2 = self.knn(ref, random_p2, k=768)
         else:
             idx1 = (np.random.choice(src.shape[0], 1024, replace=False),)

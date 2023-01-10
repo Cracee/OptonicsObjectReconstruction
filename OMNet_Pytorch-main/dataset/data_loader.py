@@ -113,7 +113,7 @@ class ModelNetNpy(Dataset):
         return len(self._data)
 
 
-class VirtualObjects(Dataset):
+class RealMeasuredObjects(Dataset):
     def __init__(
         self,
         dataset_path: str,
@@ -156,30 +156,83 @@ class VirtualObjects(Dataset):
 
         return onlyfiles
 
+    def _read_file(self, item):
+        data_path = self._data[item]
+        meta_path = self._root + "/" + data_path
+        point_cloud = io.read_point_cloud(meta_path)
+        return np.asarray(point_cloud.points)
+
     def to_category(self, i):
         return self._idx2category[i]
+
+    def other_normalise(self, points_a, points_b):
+        centroid = np.mean(points_a, axis=0)
+        points_a -= centroid
+        furthest_distance_a = np.max(np.sqrt(np.sum(abs(points_a) ** 2, axis=-1)))
+
+        centroid = np.mean(points_b, axis=0)
+        points_b -= centroid
+        furthest_distance_b = np.max(np.sqrt(np.sum(abs(points_b) ** 2, axis=-1)))
+
+        if furthest_distance_a > furthest_distance_b:
+            furthest_distance = furthest_distance_a
+        else:
+            furthest_distance = furthest_distance_b
+        points_a /= furthest_distance
+        points_b /= furthest_distance
+
+        return points_a, points_b
+
+    @staticmethod
+    def normalise(numpy_points_1, numpy_points_2):
+        min_p1 = np.min(numpy_points_1)
+        min_p2 = np.min(numpy_points_2)
+
+        if min_p1 < min_p2:
+            shift = min_p2 - min_p1
+            numpy_points_1 = numpy_points_1 + shift
+        elif min_p2 < min_p1:
+            shift = min_p1 - min_p2
+            numpy_points_2 = numpy_points_2 + shift
+
+        if np.max(numpy_points_1) - np.min(numpy_points_1) >= np.max(numpy_points_2) - np.min(numpy_points_2):
+            maxi_king = np.max(numpy_points_1)
+            mini_king = np.min(numpy_points_1)
+            divider = maxi_king - mini_king
+        else:
+            maxi_king = np.max(numpy_points_2)
+            mini_king = np.min(numpy_points_2)
+            divider = maxi_king - mini_king
+
+        numpy_points_1 = (numpy_points_1 - mini_king) / divider
+        numpy_points_1 = (numpy_points_1 * 2) - 1
+
+        numpy_points_2 = (numpy_points_2 - mini_king) / divider
+        numpy_points_2 = (numpy_points_2 * 2) - 1
+
+        if np.max(numpy_points_2) > np.max(numpy_points_1):
+            shift = np.max(numpy_points_2) - np.max(numpy_points_1) / 2
+            numpy_points_1 = numpy_points_1 + shift
+        elif np.max(numpy_points_1) > np.max(numpy_points_2):
+            shift = np.max(numpy_points_1) - np.max(numpy_points_2) / 2
+            numpy_points_2 = numpy_points_2 + shift
+
+        return numpy_points_1, numpy_points_2
 
     def __getitem__(self, item):
 
         # load the first item
-        data_path = self._data[item]
-        meta_path = self._root + "/" + data_path
-        point_cloud = io.read_point_cloud(meta_path)
-        numpy_points_1 = np.asarray(point_cloud.points)
-        numpy_points_1 = (numpy_points_1 - np.min(numpy_points_1)) / (np.max(numpy_points_1) - np.min(numpy_points_1))
-        numpy_points_1 = (numpy_points_1 * 2) - 1
+
+        numpy_points_1 = self._read_file(item)
 
         # load the second item
         x = (item + 1) % len(self._data)
-        print(x)
-        data_path = self._data[x]
-        meta_path = self._root + "/" + data_path
-        point_cloud = io.read_point_cloud(meta_path)
-        numpy_points_2 = np.asarray(point_cloud.points)
-        numpy_points_2 = (numpy_points_2 - np.min(numpy_points_2)) / (np.max(numpy_points_2) - np.min(numpy_points_2))
-        numpy_points_2 = (numpy_points_2 * 2) - 1
+        numpy_points_2 = self._read_file(x)
 
-        idx = int(data_path[-5:-4])
+        # numpy_points_1, numpy_points_2 = self.normalise(numpy_points_1, numpy_points_2)
+        numpy_points_1, numpy_points_2 = self.other_normalise(numpy_points_1, numpy_points_2)
+
+        idx = int(self._data[item][-5:-4])
         sample = {"points_1": numpy_points_1, "points_2": numpy_points_2, "label": np.array([0]), "idx": idx}
 
         if self._transform:
@@ -193,13 +246,14 @@ class VirtualObjects(Dataset):
 class SyntheticObjects(Dataset):
     def __init__(
         self,
-        subset: str = "train",
+        subset="test",
         transform=None,
-        number_of_points=768,
+        number_of_points=2000,
     ):
         """Virtual Objects created by Gregor in dataset form."""
         # path to the 3d Object
-        dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/registration/data/7_cylin_order"
+        # dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/registration/data/7_cylin_order"
+        dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/data/Ramp_sphere_upscale.stl"
 
         self._logger = logging.getLogger(self.__class__.__name__)
         self._root = dataset_path
@@ -224,8 +278,8 @@ class SyntheticObjects(Dataset):
         # load the first item
         numpy_pcd = generate_pointcloud(data_path, self.number_of_points)
 
-        idx = int(data_path[-5:-4])
-        sample = {"points_1": numpy_pcd, "points_2": numpy_pcd, "label": np.array([0]), "idx": idx}
+        idx = item
+        sample = {"points": numpy_pcd, "label": np.array([0]), "idx": idx}
 
         if self._transform:
             sample = self._transform(sample)
@@ -326,7 +380,7 @@ def fetch_dataloader(params):
             for line in open("./dataset/data/modelnet40_half2_rm_rotate.txt")
         ]
         test_categories.sort()
-        test_ds = VirtualObjects(
+        test_ds = RealMeasuredObjects(
             dataset_path,
             dataset_mode="os",
             subset="test",
@@ -335,9 +389,7 @@ def fetch_dataloader(params):
         )
 
     elif params.dataset_type == "rampshere_synthetic":
-        dataset_path = "./dataset/data/modelnet_os"
         test_ds = SyntheticObjects(
-            dataset_path,
             subset="test",
             transform=test_transforms,
             number_of_points=params.num_points

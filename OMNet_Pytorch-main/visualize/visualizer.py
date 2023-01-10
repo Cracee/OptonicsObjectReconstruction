@@ -21,24 +21,27 @@ def generate_pointcloud(path, number_of_points):
 
 
 def visualize_result(net_output, data_batch):
-
     points_src = data_batch["points_src"].cpu().numpy()
     points_ref = data_batch["points_ref"].cpu().numpy()
     transformation = net_output["transform_pair"][1].cpu().numpy()
+    axes = o3d.geometry.TriangleMesh.create_coordinate_frame()
+
+    print(points_src)
+    print(points_ref)
 
     points_transformed = se3.np_transform(transformation, points_src)
 
     for i in range(points_transformed.shape[0]):
-        item = points_transformed[i]
-        item2 = points_src[i]
-        ref = points_ref[i]
-        point = translate_np_to_pcd(item)
-        point.paint_uniform_color([0.0, 1.0, 0.0])
-        point2 = translate_np_to_pcd(item2)
-        point2.paint_uniform_color([1.0, 0.0, 0.0])
-        ref_point = translate_np_to_pcd(ref)
-        ref_point.paint_uniform_color([0.0, 0.0, 1.0])
+        item_point_trans = points_transformed[i]
+        item_point_source = points_src[i]
+        item_ref = points_ref[i]
+        point_trans = translate_np_to_pcd(item_point_trans)
+        point_trans.paint_uniform_color([0.0, 1.0, 0.0])
+        point_source = translate_np_to_pcd(item_point_source)
+        point_source.paint_uniform_color([1.0, 0.0, 0.0])
+        point_ref = translate_np_to_pcd(item_ref)
+        point_ref.paint_uniform_color([0.0, 0.0, 1.0])
 
-        o3d.visualization.draw_geometries([point, point2])
-        o3d.visualization.draw_geometries([point, ref_point])
+        o3d.visualization.draw_geometries([point_ref, point_source, axes])
+        o3d.visualization.draw_geometries([point_ref, point_trans, axes])
 
