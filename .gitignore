@@ -149,3 +149,4 @@ UTOPIC-main/dataset/modelnet40_ply_hdf5_2048
 # additions by Cracee
 .idea
 data
+dataset
