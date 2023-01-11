@@ -75,6 +75,41 @@ def train(args, net, train_loader, test_loader):
         gc.collect()
 
 
+def eval_net(args, net, train_loader, test_loader):
+    if args.use_sgd:
+        print("Use SGD")
+        opt = optim.SGD(
+            net.parameters(),
+            lr=args.lr * 100,
+            momentum=args.momentum,
+            weight_decay=1e-4,
+        )
+    else:
+        opt = optim.Adam(net.parameters(), lr=args.lr, weight_decay=1e-4)
+
+    epoch_factor = args.epochs / 100.0
+
+    scheduler = MultiStepLR(
+        opt,
+        milestones=[
+            int(30 * epoch_factor),
+            int(60 * epoch_factor),
+            int(80 * epoch_factor),
+        ],
+        gamma=0.1,
+    )
+
+    info_test_best = None
+
+    for epoch in range(args.epochs):
+        info_test = net._test_one_epoch(epoch=epoch, test_loader=test_loader)
+
+        if info_test_best is None or info_test_best["loss"] > info_test["loss"]:
+            info_test_best = info_test
+            info_test_best["stage"] = "best_test"
+        net.logger.write(info_test_best)
+        gc.collect()
+
 def main():
     parser = argparse.ArgumentParser(description="Point Cloud Registration")
     parser.add_argument(
@@ -204,7 +239,7 @@ def main():
     parser.add_argument(
         "--epochs",
         type=int,
-        default=2,
+        default=4,
         metavar="N",
         help="number of episode to train ",
     )
@@ -286,7 +321,11 @@ def main():
         help="Divided factor of rotation",
     )
     parser.add_argument(
-        "--model_path", type=str, default="", metavar="N", help="Pretrained model path"
+        "--model_path",
+        type=str,
+        default="/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/prnet-master/checkpoints/exp1/models/model.best.t7",
+        metavar="N",
+        help="Pretrained model path"
     )
 
     args = parser.parse_args()
@@ -336,8 +375,10 @@ def main():
                 model_path = (
                     "checkpoints" + "/" + args.exp_name + "/models/model.best.t7"
                 )
+                print("Nah, mate, didn't work ... Try better next time")
             else:
                 model_path = args.model_path
+                print("it worked mate")
             if not os.path.exists(model_path):
                 print("can't find pretrained model")
                 return
@@ -345,6 +386,10 @@ def main():
         raise Exception("Not implemented")
     if not args.eval:
         train(args, net, train_loader, test_loader)
+    if args.eval:
+        train(args, net, train_loader, test_loader)
+        # TODO: Write EVAL Function
+        raise NotImplementedError
 
     print("FINISH")
 

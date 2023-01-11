@@ -644,6 +644,7 @@ class PRNet(nn.Module):
 
         if self.model_path != "":
             self.load(self.model_path)
+            print("Yeah man, we did totally just load the model")
         if torch.cuda.device_count() > 1:
             self.acpnet = nn.DataParallel(self.acpnet)
 
