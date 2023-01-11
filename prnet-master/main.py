@@ -190,21 +190,21 @@ def main():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=2,
+        default=4,
         metavar="batch_size",
         help="Size of batch)",
     )
     parser.add_argument(
         "--test_batch_size",
         type=int,
-        default=12,
+        default=2,
         metavar="batch_size",
         help="Size of batch)",
     )
     parser.add_argument(
         "--epochs",
         type=int,
-        default=100,
+        default=2,
         metavar="N",
         help="number of episode to train ",
     )
@@ -310,7 +310,7 @@ def main():
             batch_size=args.batch_size,
             shuffle=True,
             drop_last=True,
-            num_workers=1,
+            num_workers=0,
         )
         test_loader = DataLoader(
             ModelNet40(
@@ -324,7 +324,7 @@ def main():
             batch_size=args.test_batch_size,
             shuffle=False,
             drop_last=False,
-            num_workers=1,
+            num_workers=0,
         )
     else:
         raise Exception("not implemented")
