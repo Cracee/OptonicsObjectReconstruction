@@ -1,6 +1,6 @@
 # OptonicsObjectReconstruction
-[![Contributor](https://img.shields.io/badge/contributor-cracee-brightgreen.svg)](https://github.com/Cracee/OptonicsObjectReconstruction)
-[![Project](https://img.shields.io/badge/Project%20under%20supervision%20of-OPTONIC-blue.svg)](https://github.com/Cracee/OptonicsObjectReconstruction)
+[![Contributor](https://img.shields.io/badge/contributor-cracee-brightgreen.svg)](https://github.com/Cracee)
+[![Project](https://img.shields.io/badge/Project%20under%20supervision%20of-OPTONIC-blue.svg)](https://www.optonic.com/)
 
 # Table of Content
 <ol>
