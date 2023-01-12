@@ -20,7 +20,11 @@ In `Registration` you can find the 1. try, with manual ICP Algorithms, to puzzle
 
 In `nxlib_tutorials` you can find some Tutorials from the Ensenso SDK Website. They are used to test the environment, if camera communication works etc.
 
-The [OMNet_Pytorch-main], [prnet-master] and [UTOPIC-main] folders contain DL approaches, which will get fitted to this project in the next days and weeks. 
+The `OMNet_Pytorch-main` contains the Deep Learning implementation of [OMNet] from their official github [OMNet_Pytorch]. It is already transformed to fit our needs with new dataloaders that can load out own 3d models.
+
+The `prnet-master` contains the implementation of [PRNet] from their official github [prnet-master]. It is momentarily worked on, to work with our stuff.
+
+The `UTOPIC-main` folders contain another DL approach, which I haven't worked on yet. It is the official implementation of [UTOPIC] from their github [UTOPIC-main]. Soon to come. 
 
 <details><summary>Do not click to open</summary>
   <ul>
@@ -32,6 +36,9 @@ The [OMNet_Pytorch-main], [prnet-master] and [UTOPIC-main] folders contain DL ap
   </ul>
 </details>
 
-[OMNet_Pytorch-main]: https://github.com/hxwork/OMNet_Pytorch
+[OMNet_Pytorch]: https://github.com/hxwork/OMNet_Pytorch
+[OMNet]: https://openaccess.thecvf.com/content/ICCV2021/papers/Xu_OMNet_Learning_Overlapping_Mask_for_Partial-to-Partial_Point_Cloud_Registration_ICCV_2021_paper.pdf
 [prnet-master]: https://github.com/WangYueFt/prnet
+[PRNet]: https://arxiv.org/pdf/1910.12240.pdf
 [UTOPIC-main]: https://github.com/ZhileiChen99/UTOPIC
+[UTOPIC]: https://arxiv.org/pdf/2208.02712.pdf
