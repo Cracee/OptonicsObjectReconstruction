@@ -324,6 +324,7 @@ def main():
         "--model_path",
         type=str,
         #default="/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/prnet-master/checkpoints/exp1/models/model.best.t7",
+        default="",
         metavar="N",
         help="Pretrained model path"
     )
