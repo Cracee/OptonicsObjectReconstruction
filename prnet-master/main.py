@@ -239,7 +239,7 @@ def main():
     parser.add_argument(
         "--epochs",
         type=int,
-        default=4,
+        default=25,
         metavar="N",
         help="number of episode to train ",
     )
@@ -323,7 +323,7 @@ def main():
     parser.add_argument(
         "--model_path",
         type=str,
-        default="/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/prnet-master/checkpoints/exp1/models/model.best.t7",
+        #default="/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/prnet-master/checkpoints/exp1/models/model.best.t7",
         metavar="N",
         help="Pretrained model path"
     )
