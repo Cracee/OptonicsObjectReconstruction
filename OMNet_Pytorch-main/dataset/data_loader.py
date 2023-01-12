@@ -165,7 +165,7 @@ class RealMeasuredObjects(Dataset):
     def to_category(self, i):
         return self._idx2category[i]
 
-    def other_normalise(self, points_a, points_b):
+    def normalise_pcd_with_respect(self, points_a, points_b):
         centroid = np.mean(points_a, axis=0)
         points_a -= centroid
         furthest_distance_a = np.max(np.sqrt(np.sum(abs(points_a) ** 2, axis=-1)))
@@ -183,54 +183,17 @@ class RealMeasuredObjects(Dataset):
 
         return points_a, points_b
 
-    @staticmethod
-    def normalise(numpy_points_1, numpy_points_2):
-        min_p1 = np.min(numpy_points_1)
-        min_p2 = np.min(numpy_points_2)
-
-        if min_p1 < min_p2:
-            shift = min_p2 - min_p1
-            numpy_points_1 = numpy_points_1 + shift
-        elif min_p2 < min_p1:
-            shift = min_p1 - min_p2
-            numpy_points_2 = numpy_points_2 + shift
-
-        if np.max(numpy_points_1) - np.min(numpy_points_1) >= np.max(numpy_points_2) - np.min(numpy_points_2):
-            maxi_king = np.max(numpy_points_1)
-            mini_king = np.min(numpy_points_1)
-            divider = maxi_king - mini_king
-        else:
-            maxi_king = np.max(numpy_points_2)
-            mini_king = np.min(numpy_points_2)
-            divider = maxi_king - mini_king
-
-        numpy_points_1 = (numpy_points_1 - mini_king) / divider
-        numpy_points_1 = (numpy_points_1 * 2) - 1
-
-        numpy_points_2 = (numpy_points_2 - mini_king) / divider
-        numpy_points_2 = (numpy_points_2 * 2) - 1
-
-        if np.max(numpy_points_2) > np.max(numpy_points_1):
-            shift = np.max(numpy_points_2) - np.max(numpy_points_1) / 2
-            numpy_points_1 = numpy_points_1 + shift
-        elif np.max(numpy_points_1) > np.max(numpy_points_2):
-            shift = np.max(numpy_points_1) - np.max(numpy_points_2) / 2
-            numpy_points_2 = numpy_points_2 + shift
-
-        return numpy_points_1, numpy_points_2
-
     def __getitem__(self, item):
 
+        item_next = (item + 1) % len(self._data)
+
         # load the first item
-
         numpy_points_1 = self._read_file(item)
-
         # load the second item
-        x = (item + 1) % len(self._data)
-        numpy_points_2 = self._read_file(x)
+        numpy_points_2 = self._read_file(item_next)
 
-        # numpy_points_1, numpy_points_2 = self.normalise(numpy_points_1, numpy_points_2)
-        numpy_points_1, numpy_points_2 = self.other_normalise(numpy_points_1, numpy_points_2)
+        # normalise with scaling both equally with respect to the environment
+        numpy_points_1, numpy_points_2 = self.normalise_pcd_with_respect(numpy_points_1, numpy_points_2)
 
         idx = int(self._data[item][-5:-4])
         sample = {"points_1": numpy_points_1, "points_2": numpy_points_2, "label": np.array([0]), "idx": idx}
@@ -249,6 +212,7 @@ class SyntheticObjects(Dataset):
         subset="test",
         transform=None,
         number_of_points=2000,
+        resample=True
     ):
         """Virtual Objects created by Gregor in dataset form."""
         # path to the 3d Object
@@ -259,6 +223,7 @@ class SyntheticObjects(Dataset):
         self._root = dataset_path
         self._subset = subset
         self.number_of_points = number_of_points
+        self._resample = resample
 
         if not os.path.exists(os.path.join(dataset_path)):
             assert FileNotFoundError("Not found dataset_path: {}".format(dataset_path))
@@ -274,12 +239,15 @@ class SyntheticObjects(Dataset):
     def __getitem__(self, item):
 
         data_path = self._root
+        idx = item
 
         # load the first item
-        numpy_pcd = generate_pointcloud(data_path, self.number_of_points)
-
-        idx = item
-        sample = {"points": numpy_pcd, "label": np.array([0]), "idx": idx}
+        if self._resample:
+            numpy_pcd, numpy_pcd2 = generate_pointcloud(data_path, self.number_of_points, resampled=True)
+            sample = {"points": numpy_pcd, "points_resampled": numpy_pcd, "label": np.array([0]), "idx": idx}
+        else:
+            numpy_pcd = generate_pointcloud(data_path, self.number_of_points)
+            sample = {"points": numpy_pcd, "label": np.array([0]), "idx": idx}
 
         if self._transform:
             sample = self._transform(sample)
@@ -287,6 +255,7 @@ class SyntheticObjects(Dataset):
 
     def __len__(self):
         return len(self._data)
+
 
 def fetch_dataloader(params):
     _logger.info(

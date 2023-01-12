@@ -51,7 +51,10 @@ class SplitSourceRef:
         if self.mode == "hdf":
             sample["points_raw"] = sample.pop("points").astype(np.float32)[:, :3]
             sample["points_src"] = sample["points_raw"].copy()
-            sample["points_ref"] = sample["points_raw"].copy()
+            if "points_resampled" in sample:
+                sample["points_ref"] = sample.pop("points_resampled").astype(np.float32)[:, :3]
+            else:
+                sample["points_ref"] = sample["points_raw"].copy()
             sample["points_src_raw"] = sample["points_src"].copy().astype(np.float32)
             sample["points_ref_raw"] = sample["points_ref"].copy().astype(np.float32)
 
@@ -577,8 +580,6 @@ class PRNetTorch:
             idx1 = self.knn(src, random_p1, k=768)
             random_p2 = np.random.random(size=(1, 3)) + np.array([[500, 500, 500]]) * np.random.choice([1, -1, 2, -2])
             random_p2 = self.random_corner_partial()
-            print(random_p2)
-            print(random_p1)
             # random_p2 = random_p1
             idx2 = self.knn(ref, random_p2, k=768)
         else:
