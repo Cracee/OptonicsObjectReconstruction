@@ -487,7 +487,14 @@ class SVDHead(nn.Module):
         R = []
 
         for i in range(src.size(0)):
-            u, s, v = torch.svd(H[i])
+            ####
+            matrizia = H[i]
+            matrizia_bool = torch.isnan(matrizia)
+            if torch.sum(matrizia_bool) > 0:
+                print("There are NANs")
+                print("This many: ", str(torch.sum(matrizia_bool).item()))
+            ####
+            u, s, v = torch.linalg.svd(H[i])
             r = torch.matmul(v, u.transpose(1, 0)).contiguous()
             r_det = torch.det(r).item()
             diag = torch.from_numpy(
