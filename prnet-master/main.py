@@ -26,7 +26,7 @@ def _init_(args):
     os.system("cp main.py checkpoints" + "/" + args.exp_name + "/" + "main.py.backup")
     os.system("cp model.py checkpoints" + "/" + args.exp_name + "/" + "model.py.backup")
     os.system(
-        "cp dataset.py checkpoints" + "/" + args.exp_name + "/" + "dataset.py.backup"
+        "cp data.py checkpoints" + "/" + args.exp_name + "/" + "data.py.backup"
     )
 
 
@@ -58,7 +58,6 @@ def train(args, net, train_loader, test_loader):
     info_test_best = None
 
     for epoch in range(args.epochs):
-        scheduler.step()
         info_train = net._train_one_epoch(
             epoch=epoch, train_loader=train_loader, opt=opt
         )
@@ -73,6 +72,7 @@ def train(args, net, train_loader, test_loader):
 
         net.save("checkpoints/%s/models/model.%d.t7" % (args.exp_name, epoch))
         gc.collect()
+        scheduler.step()
 
 
 def eval_net(args, net, train_loader, test_loader):
@@ -111,223 +111,78 @@ def eval_net(args, net, train_loader, test_loader):
         gc.collect()
 
 def main():
-    parser = argparse.ArgumentParser(description="Point Cloud Registration")
-    parser.add_argument(
-        "--exp_name",
-        type=str,
-        default="exp",
-        metavar="N",
-        help="Name of the experiment",
-    )
-    parser.add_argument(
-        "--model",
-        type=str,
-        default="prnet",
-        metavar="N",
-        choices=["prnet"],
-        help="Model to use, [prnet]",
-    )
-    parser.add_argument(
-        "--emb_nn",
-        type=str,
-        default="dgcnn",
-        metavar="N",
-        choices=["pointnet", "dgcnn"],
-        help="Embedding to use, [pointnet, dgcnn]",
-    )
-    parser.add_argument(
-        "--attention",
-        type=str,
-        default="transformer",
-        metavar="N",
-        choices=["identity", "transformer"],
-        help="Head to use, [identity, transformer]",
-    )
-    parser.add_argument(
-        "--head",
-        type=str,
-        default="svd",
-        metavar="N",
-        choices=["mlp", "svd"],
-        help="Head to use, [mlp, svd]",
-    )
-    parser.add_argument(
-        "--n_emb_dims",
-        type=int,
-        default=512,
-        metavar="N",
-        help="Dimension of embeddings",
-    )
-    parser.add_argument(
-        "--n_blocks",
-        type=int,
-        default=1,
-        metavar="N",
-        help="Num of blocks of encoder&decoder",
-    )
-    parser.add_argument(
-        "--n_heads",
-        type=int,
-        default=4,
-        metavar="N",
-        help="Num of heads in multiheadedattention",
-    )
-    parser.add_argument(
-        "--n_iters",
-        type=int,
-        default=3,
-        metavar="N",
-        help="Num of iters to run inference",
-    )
-    parser.add_argument(
-        "--discount_factor",
-        type=float,
-        default=0.9,
-        metavar="N",
-        help="Discount factor to compute the loss",
-    )
-    parser.add_argument(
-        "--n_ff_dims",
-        type=int,
-        default=1024,
-        metavar="N",
-        help="Num of dimensions of fc in transformer",
-    )
-    parser.add_argument(
-        "--n_keypoints",
-        type=int,
-        default=512,
-        metavar="N",
-        help="Num of keypoints to use",
-    )
-    parser.add_argument(
-        "--temp_factor",
-        type=float,
-        default=100,
-        metavar="N",
-        help="Factor to control the softmax precision",
-    )
-    parser.add_argument(
-        "--cat_sampler",
-        type=str,
-        default="gumbel_softmax",
-        choices=["softmax", "gumbel_softmax"],
-        metavar="N",
-        help="use gumbel_softmax to get the categorical sample",
-    )
-    parser.add_argument(
-        "--dropout",
-        type=float,
-        default=0.0,
-        metavar="N",
-        help="Dropout ratio in transformer",
-    )
-    parser.add_argument(
-        "--batch_size",
-        type=int,
-        default=4,
-        metavar="batch_size",
-        help="Size of batch)",
-    )
-    parser.add_argument(
-        "--test_batch_size",
-        type=int,
-        default=2,
-        metavar="batch_size",
-        help="Size of batch)",
-    )
-    parser.add_argument(
-        "--epochs",
-        type=int,
-        default=25,
-        metavar="N",
-        help="number of episode to train ",
-    )
-    parser.add_argument("--use_sgd", type=bool, default=False, help="Use SGD")
-    parser.add_argument(
-        "--lr",
-        type=float,
-        default=0.001,
-        metavar="LR",
-        help="learning rate (default: 0.001, 0.1 if using sgd)",
-    )
-    parser.add_argument(
-        "--momentum",
-        type=float,
-        default=0.9,
-        metavar="M",
-        help="SGD momentum (default: 0.9)",
-    )
-    parser.add_argument(
-        "--no_cuda", action="store_true", default=False, help="enables CUDA training"
-    )
-    parser.add_argument(
-        "--seed", type=int, default=1234, metavar="S", help="random seed (default: 1)"
-    )
-    parser.add_argument(
-        "--eval", action="store_true", default=False, help="evaluate the model"
-    )
-    parser.add_argument(
-        "--cycle_consistency_loss",
-        type=float,
-        default=0.1,
-        metavar="N",
-        help="cycle consistency loss",
-    )
-    parser.add_argument(
-        "--feature_alignment_loss",
-        type=float,
-        default=0.1,
-        metavar="N",
-        help="feature alignment loss",
-    )
-    parser.add_argument(
-        "--gaussian_noise",
-        type=bool,
-        default=False,
-        metavar="N",
-        help="Wheter to add gaussian noise",
-    )
-    parser.add_argument(
-        "--unseen",
-        type=bool,
-        default=False,
-        metavar="N",
-        help="Wheter to test on unseen category",
-    )
-    parser.add_argument(
-        "--n_points", type=int, default=1024, metavar="N", help="Num of points to use"
-    )
-    parser.add_argument(
-        "--n_subsampled_points",
-        type=int,
-        default=768,
-        metavar="N",
-        help="Num of subsampled points to use",
-    )
-    parser.add_argument(
-        "--dataset",
-        type=str,
-        default="modelnet40",
-        choices=["modelnet40"],
-        metavar="N",
-        help="dataset to use",
-    )
-    parser.add_argument(
-        "--rot_factor",
-        type=float,
-        default=4,
-        metavar="N",
-        help="Divided factor of rotation",
-    )
-    parser.add_argument(
-        "--model_path",
-        type=str,
-        #default="/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/prnet-master/checkpoints/exp1/models/model.best.t7",
-        default="",
-        metavar="N",
-        help="Pretrained model path"
-    )
+    parser = argparse.ArgumentParser(description='Point Cloud Registration')
+    parser.add_argument('--exp_name', type=str, default='exp', metavar='N',
+                        help='Name of the experiment')
+    parser.add_argument('--model', type=str, default='prnet', metavar='N',
+                        choices=['prnet'],
+                        help='Model to use, [prnet]')
+    parser.add_argument('--emb_nn', type=str, default='dgcnn', metavar='N',
+                        choices=['pointnet', 'dgcnn'],
+                        help='Embedding to use, [pointnet, dgcnn]')
+    parser.add_argument('--attention', type=str, default='transformer', metavar='N',
+                        choices=['identity', 'transformer'],
+                        help='Head to use, [identity, transformer]')
+    parser.add_argument('--head', type=str, default='svd', metavar='N',
+                        choices=['mlp', 'svd'],
+                        help='Head to use, [mlp, svd]')
+    parser.add_argument('--n_emb_dims', type=int, default=512, metavar='N',
+                        help='Dimension of embeddings')
+    parser.add_argument('--n_blocks', type=int, default=1, metavar='N',
+                        help='Num of blocks of encoder&decoder')
+    parser.add_argument('--n_heads', type=int, default=4, metavar='N',
+                        help='Num of heads in multiheadedattention')
+    parser.add_argument('--n_iters', type=int, default=3, metavar='N',
+                        help='Num of iters to run inference')
+    parser.add_argument('--discount_factor', type=float, default=0.9, metavar='N',
+                        help='Discount factor to compute the loss')
+    parser.add_argument('--n_ff_dims', type=int, default=1024, metavar='N',
+                        help='Num of dimensions of fc in transformer')
+    parser.add_argument('--n_keypoints', type=int, default=512, metavar='N',
+                        help='Num of keypoints to use')
+    parser.add_argument('--temp_factor', type=float, default=100, metavar='N',
+                        help='Factor to control the softmax precision')
+    parser.add_argument('--cat_sampler', type=str, default='gumbel_softmax', choices=['softmax', 'gumbel_softmax'],
+                        metavar='N', help='use gumbel_softmax to get the categorical sample')
+    parser.add_argument('--dropout', type=float, default=0.0, metavar='N',
+                        help='Dropout ratio in transformer')
+    parser.add_argument('--batch_size', type=int, default=4, metavar='batch_size',
+                        help='Size of batch)')
+    parser.add_argument('--test_batch_size', type=int, default=2, metavar='batch_size',
+                        help='Size of batch)')
+    parser.add_argument('--epochs', type=int, default=100, metavar='N',
+                        help='number of episode to train ')
+    parser.add_argument('--use_sgd', type=bool, default=False,
+                        help='Use SGD')
+    parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
+                        help='learning rate (default: 0.001, 0.1 if using sgd)')
+    parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
+                        help='SGD momentum (default: 0.9)')
+    parser.add_argument('--no_cuda', action='store_true', default=False,
+                        help='enables CUDA training')
+    parser.add_argument('--seed', type=int, default=1234, metavar='S',
+                        help='random seed (default: 1)')
+    parser.add_argument('--eval', action='store_true', default=False,
+                        help='evaluate the model')
+    parser.add_argument('--cycle_consistency_loss', type=float, default=0.1, metavar='N',
+                        help='cycle consistency loss')
+    parser.add_argument('--feature_alignment_loss', type=float, default=0.1, metavar='N',
+                        help='feature alignment loss')
+    parser.add_argument('--gaussian_noise', type=bool, default=False, metavar='N',
+                        help='Whether to add gaussian noise')
+    parser.add_argument('--unseen', type=bool, default=False, metavar='N',
+                        help='Whether to test on unseen category')
+    parser.add_argument('--n_points', type=int, default=1024, metavar='N',
+                        help='Num of points to use')
+    parser.add_argument('--n_subsampled_points', type=int, default=768, metavar='N',
+                        help='Num of subsampled points to use')
+    parser.add_argument('--dataset', type=str, default='modelnet40', choices=['modelnet40'], metavar='N',
+                        help='dataset to use')
+    parser.add_argument('--rot_factor', type=float, default=4, metavar='N',
+                        help='Divided factor of rotation')
+    parser.add_argument('--model_path', type=str, default='', metavar='N',
+                        help='Pretrained model path')
+    #default="/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/prnet-master/checkpoints/exp1/models/model.best.t7",
 
     args = parser.parse_args()
     torch.backends.cudnn.deterministic = True
@@ -386,6 +241,7 @@ def main():
     else:
         raise Exception("Not implemented")
     if not args.eval:
+        print("Beginning Training")
         train(args, net, train_loader, test_loader)
     if args.eval:
         train(args, net, train_loader, test_loader)
