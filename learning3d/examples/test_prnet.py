@@ -19,7 +19,7 @@ if BASE_DIR[-8:] == 'examples':
 	os.chdir(os.path.join(BASE_DIR, os.pardir))
 	
 from learning3d.models import PRNet
-from learning3d.data_utils import RegistrationData, ModelNet40Data
+from learning3d.data_utils import RegistrationData, ModelNet40Data, RegistrationDataFragments
 
 def get_transformations(igt):
 	R_ba = igt[:, 0:3, 0:3]                             # Ps = R_ba * Pt
@@ -86,7 +86,7 @@ def options():
 	parser.add_argument('--num_iterations', default=3, type=int,
 						help='Number of Iterations')
 
-	parser.add_argument('-j', '--workers', default=4, type=int,
+	parser.add_argument('-j', '--workers', default=0, type=int,
 						metavar='N', help='number of data loading workers (default: 4)')
 	parser.add_argument('-b', '--batch_size', default=1, type=int,
 						metavar='N', help='mini-batch size (default: 32)')
@@ -103,7 +103,8 @@ def main():
 	torch.backends.cudnn.deterministic = True
 	
 	trainset = RegistrationData('PRNet', ModelNet40Data(train=True), partial_source=True, partial_template=True)
-	testset = RegistrationData('PRNet', ModelNet40Data(train=False), partial_source=True, partial_template=True)
+	# testset = RegistrationData('PRNet', ModelNet40Data(train=False), partial_source=True, partial_template=True)
+	testset = RegistrationDataFragments('PRNet')
 	train_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, drop_last=True, num_workers=args.workers)
 	test_loader = DataLoader(testset, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.workers)
 

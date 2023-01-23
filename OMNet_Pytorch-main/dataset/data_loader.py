@@ -7,7 +7,7 @@ import logging
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
-from open3d import io
+
 
 from dataset.transformations import fetch_transform
 

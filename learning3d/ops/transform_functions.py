@@ -314,6 +314,14 @@ class DCPTransform:
         self.generate_transform()
         return torch.from_numpy(self.apply_transformation(template)).float()
 
+    def get_fake_transform(self):
+        self.generate_transform()
+        rotation = Rotation.from_euler('zyx', [self.anglez, self.angley, self.anglex])
+        self.igt = rotation.apply(np.eye(3))
+        self.igt = np.concatenate([self.igt, self.translation.reshape(-1, 1)], axis=1)
+        self.igt = torch.from_numpy(np.concatenate([self.igt, np.array([[0., 0., 0., 1.]])], axis=0)).float()
+        return self.igt
+
 class DeepGMRTransform:
     def __init__(self, angle_range=45, translation_range=1):
         self.angle_range = angle_range*(np.pi/180)

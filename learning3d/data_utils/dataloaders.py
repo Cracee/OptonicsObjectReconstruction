@@ -5,6 +5,7 @@ from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 import numpy as np
 import os
+from os.path import isfile, join
 import h5py
 import subprocess
 import shlex
@@ -17,6 +18,7 @@ from scipy.spatial.distance import minkowski
 #from pycuda.compiler import SourceModule
 from scipy.spatial import cKDTree
 from torch.utils.data import Dataset
+from open3d import io
 
 def download_modelnet40():
 	BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -273,6 +275,80 @@ class RegistrationData(Dataset):
 				return template, source, igt, self.template_mask
 		else:
 			return template, source, igt
+
+
+class RegistrationDataFragments(Dataset):
+	def __init__(self, algorithm, number_of_points=1024, additional_params={}):
+		super(RegistrationDataFragments, self).__init__()
+		available_algorithms = ['PRNet']
+		if algorithm in available_algorithms:
+			self.algorithm = algorithm
+		else:
+			raise Exception("Algorithm not available for registration.")
+
+		dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/registration/data/7_cylin_order"
+		self.data_path = dataset_path
+		self._data = self._read_folder(dataset_path)
+		self.additional_params = additional_params
+		self.use_rri = False
+		self.number_of_points = number_of_points
+		if self.algorithm == 'PRNet':
+			from ..ops.transform_functions import DCPTransform
+			self.transforms = DCPTransform(angle_range=45, translation_range=1)
+
+	def __len__(self):
+		return len(self._data)
+
+	def _read_folder(self, folder_name):
+		onlyfiles = [f for f in os.listdir(folder_name) if isfile(join(folder_name, f))]
+
+		return onlyfiles
+
+	def _read_file(self, item):
+		data_path = self._data[item]
+		meta_path = self.data_path + "/" + data_path
+		point_cloud = io.read_point_cloud(meta_path)
+		return np.asarray(point_cloud.points)
+
+	def normalise_pcd_with_respect(self, points_a, points_b):
+		centroid = np.mean(points_a, axis=0)
+		points_a -= centroid
+		furthest_distance_a = np.max(np.sqrt(np.sum(abs(points_a) ** 2, axis=-1)))
+
+		centroid = np.mean(points_b, axis=0)
+		points_b -= centroid
+		furthest_distance_b = np.max(np.sqrt(np.sum(abs(points_b) ** 2, axis=-1)))
+
+		if furthest_distance_a > furthest_distance_b:
+			furthest_distance = furthest_distance_a
+		else:
+			furthest_distance = furthest_distance_b
+		points_a /= furthest_distance
+		points_b /= furthest_distance
+
+		return points_a, points_b
+
+	def __getitem__(self, index):
+		item_next = (index + 1) % len(self._data)
+
+		# load the first item
+		numpy_points_1 = self._read_file(index)
+		# load the second item
+		numpy_points_2 = self._read_file(item_next)
+
+		idx1 = (np.random.choice(numpy_points_1.shape[0], self.number_of_points, replace=False),)
+		numpy_points_1 = numpy_points_1[idx1]
+		idx2 = (np.random.choice(numpy_points_2.shape[0], self.number_of_points, replace=False),)
+		numpy_points_2 = numpy_points_2[idx2]
+
+		# normalise with scaling both equally with respect to the environment
+		numpy_points_1, numpy_points_2 = self.normalise_pcd_with_respect(numpy_points_1, numpy_points_2)
+
+		template = torch.from_numpy(numpy_points_1).float()
+		source = torch.from_numpy(numpy_points_2).float()
+		igt = self.transforms.get_fake_transform()
+
+		return template, source, igt
 
 
 class SegmentationData(Dataset):
