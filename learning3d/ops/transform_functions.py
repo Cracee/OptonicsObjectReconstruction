@@ -310,7 +310,8 @@ class DCPTransform:
         return source
 
     def __call__(self, template):
-        template = template.numpy()
+        if type(template) is not np.ndarray:
+            template = template.numpy()
         self.generate_transform()
         return torch.from_numpy(self.apply_transformation(template)).float()
 

@@ -19,7 +19,7 @@ if BASE_DIR[-8:] == 'examples':
 	os.chdir(os.path.join(BASE_DIR, os.pardir))
 	
 from learning3d.models import PRNet
-from learning3d.data_utils import RegistrationData, ModelNet40Data, RegistrationDataFragments
+from learning3d.data_utils import RegistrationData, ModelNet40Data, RegistrationDataFragments, SyntheticFragments
 
 def get_transformations(igt):
 	R_ba = igt[:, 0:3, 0:3]                             # Ps = R_ba * Pt
@@ -98,13 +98,16 @@ def options():
 	args = parser.parse_args()
 	return args
 
-def main():
+def main(own_data=False):
 	args = options()
 	torch.backends.cudnn.deterministic = True
 	
 	trainset = RegistrationData('PRNet', ModelNet40Data(train=True), partial_source=True, partial_template=True)
-	# testset = RegistrationData('PRNet', ModelNet40Data(train=False), partial_source=True, partial_template=True)
-	testset = RegistrationDataFragments('PRNet')
+	if not own_data:
+		testset = RegistrationData('PRNet', ModelNet40Data(train=False), partial_source=True, partial_template=True)
+	else:
+		#testset = RegistrationDataFragments('PRNet')
+		testset = SyntheticFragments('PRNet')
 	train_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, drop_last=True, num_workers=args.workers)
 	test_loader = DataLoader(testset, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.workers)
 

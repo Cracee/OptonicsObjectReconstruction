@@ -19,6 +19,8 @@ from scipy.spatial.distance import minkowski
 from scipy.spatial import cKDTree
 from torch.utils.data import Dataset
 from open3d import io
+from .. data_utils.utils_data_utils import generate_pointcloud
+
 
 def download_modelnet40():
 	BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -31,6 +33,7 @@ def download_modelnet40():
 		os.system('wget %s; unzip %s' % (www, zipfile))
 		os.system('mv %s %s' % (zipfile[:-4], DATA_DIR))
 		os.system('rm %s' % (zipfile))
+
 
 def load_data(train, use_normals):
 	if train: partition = 'train'
@@ -52,8 +55,10 @@ def load_data(train, use_normals):
 	all_label = np.concatenate(all_label, axis=0)
 	return all_data, all_label
 
+
 def deg_to_rad(deg):
 	return np.pi / 180 * deg
+
 
 def create_random_transform(dtype, max_rotation_deg, max_translation):
 	max_rotation = deg_to_rad(max_rotation_deg)
@@ -65,11 +70,13 @@ def create_random_transform(dtype, max_rotation_deg, max_translation):
 	vec = torch.tensor(vec, dtype=dtype)
 	return vec
 
+
 def jitter_pointcloud(pointcloud, sigma=0.04, clip=0.05):
 	# N, C = pointcloud.shape
 	sigma = 0.04*np.random.random_sample()
 	pointcloud += torch.empty(pointcloud.shape).normal_(mean=0, std=sigma).clamp(-clip, clip)
 	return pointcloud
+
 
 def farthest_subsample_points(pointcloud1, num_subsampled_points=768):
 	pointcloud1 = pointcloud1
@@ -286,7 +293,7 @@ class RegistrationDataFragments(Dataset):
 		else:
 			raise Exception("Algorithm not available for registration.")
 
-		dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/registration/data/7_cylin_order"
+		dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/registration/data/7_RAMP_order"
 		self.data_path = dataset_path
 		self._data = self._read_folder(dataset_path)
 		self.additional_params = additional_params
@@ -347,6 +354,68 @@ class RegistrationDataFragments(Dataset):
 		template = torch.from_numpy(numpy_points_1).float()
 		source = torch.from_numpy(numpy_points_2).float()
 		igt = self.transforms.get_fake_transform()
+
+		return template, source, igt
+
+
+class SyntheticFragments(Dataset):
+	def __init__(self, algorithm, number_of_points=768, partial=True, additional_params={}):
+		super(SyntheticFragments, self).__init__()
+		available_algorithms = ['PRNet']
+		if algorithm in available_algorithms:
+			self.algorithm = algorithm
+		else:
+			raise Exception("Algorithm not available for registration.")
+
+		dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/data/Ramp_sphere_upscale.stl"
+		self.data_path = dataset_path
+		self.additional_params = additional_params
+		self.use_rri = False
+		self.partial = partial
+		self.number_of_points = number_of_points
+		if self.algorithm == 'PRNet':
+			from ..ops.transform_functions import DCPTransform
+			self.transforms = DCPTransform(angle_range=45, translation_range=1)
+
+	def __len__(self):
+		return 50
+
+	def normalise_pcd_with_respect(self, points_a, points_b):
+		centroid = np.mean(points_a, axis=0)
+		points_a -= centroid
+		furthest_distance_a = np.max(np.sqrt(np.sum(abs(points_a) ** 2, axis=-1)))
+
+		centroid = np.mean(points_b, axis=0)
+		points_b -= centroid
+		furthest_distance_b = np.max(np.sqrt(np.sum(abs(points_b) ** 2, axis=-1)))
+
+		if furthest_distance_a > furthest_distance_b:
+			furthest_distance = furthest_distance_a
+		else:
+			furthest_distance = furthest_distance_b
+		points_a /= furthest_distance
+		points_b /= furthest_distance
+
+		return points_a, points_b
+
+	def __getitem__(self, index):
+		data_path = self.data_path
+
+		numpy_pcd, numpy_pcd2 = generate_pointcloud(data_path, self.number_of_points * 2, resampled=True)
+		self.transforms.index = index  # for fixed transformations in PCRNet.
+		numpy_pcd2 = self.transforms(numpy_pcd2)
+
+		# normalisation step
+		# numpy_pcd, numpy_pcd2 = self.normalise_pcd_with_respect(numpy_pcd, numpy_pcd2)
+
+		# downsampling step
+		if self.partial:
+			source, self.source_mask = farthest_subsample_points(numpy_pcd, num_subsampled_points=self.number_of_points)
+			template, self.template_mask = farthest_subsample_points(numpy_pcd2, num_subsampled_points=self.number_of_points)
+
+		igt = self.transforms.igt
+		#template = torch.from_numpy(template).float()
+		source = torch.from_numpy(source).float()
 
 		return template, source, igt
 
