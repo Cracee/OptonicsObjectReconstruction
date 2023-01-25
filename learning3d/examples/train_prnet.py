@@ -11,6 +11,8 @@ from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
 
+from torch.autograd import Variable
+
 # Only if the files are in example folder.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR[-8:] == 'examples':
@@ -108,7 +110,7 @@ def train_one_epoch(device, model, train_loader, optimizer):
 def train(args, model, train_loader, test_loader, boardio, textio, checkpoint):
 	learnable_params = filter(lambda p: p.requires_grad, model.parameters())
 	if args.optimizer == 'Adam':
-		optimizer = torch.optim.Adam(learnable_params)
+		optimizer = torch.optim.Adam(learnable_params, lr=0.000125)
 	else:
 		optimizer = torch.optim.SGD(learnable_params, lr=0.1)
 
@@ -144,7 +146,7 @@ def train(args, model, train_loader, test_loader, boardio, textio, checkpoint):
 
 def options():
 	parser = argparse.ArgumentParser(description='Point Cloud Registration')
-	parser.add_argument('--exp_name', type=str, default='exp_prnet', metavar='N',
+	parser.add_argument('--exp_name', type=str, default='current_exp_prnet', metavar='N',
 						help='Name of the experiment')
 	parser.add_argument('--dataset_path', type=str, default='ModelNet40',
 						metavar='PATH', help='path to the input dataset') # like '/path/to/ModelNet40'
@@ -166,7 +168,7 @@ def options():
 						metavar='N', help='mini-batch size (default: 32)')
 	parser.add_argument('--batch_size_test', default=2, type=int,
 						metavar='N', help='mini-batch size (default: 32)')
-	parser.add_argument('--epochs', default=200, type=int,
+	parser.add_argument('--epochs', default=250, type=int,
 						metavar='N', help='number of total epochs to run')
 	parser.add_argument('--start_epoch', default=0, type=int,
 						metavar='N', help='manual epoch number (useful on restarts)')
@@ -213,19 +215,24 @@ def main():
 	checkpoint = None
 	if args.resume:
 		assert os.path.isfile(args.resume)
+		print("Resuming the Training!")
 		checkpoint = torch.load(args.resume)
 		args.start_epoch = checkpoint['epoch']
 		model.load_state_dict(checkpoint['model'])
 
 	if args.pretrained:
 		assert os.path.isfile(args.pretrained)
+		print("Using a pretrained model!")
 		model.load_state_dict(torch.load(args.pretrained, map_location='cpu'))
+
+
 	model.to(args.device)
 
 	if args.eval:
 		test(args, model, test_loader, textio)
 	else:
 		train(args, model, train_loader, test_loader, boardio, textio, checkpoint)
+
 
 if __name__ == '__main__':
 	main()

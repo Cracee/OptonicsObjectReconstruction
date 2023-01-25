@@ -37,3 +37,19 @@ def generate_pointcloud(path, number_of_points, resampled=False, resample_with_b
     if len(pcds) == 1:
         pcds = pcds[0]
     return pcds
+
+
+def better_random_corner():
+    step = np.random.random(size=(1, 3)) * np.array([[500, 500, 500]])
+    corner = np.array(
+        [np.random.choice([1, -1, 2, -2]), np.random.choice([1, -1, 2, -2]), np.random.choice([1, -1, 2, -2])])
+    result = step * corner
+    return result
+
+
+def better_random_corner_sensor_imitation():
+    step = np.random.random(size=(1, 3)) + np.array([[500, 500, 500]])
+    corner = np.array(
+        [np.random.choice([1, -1, 2, -2]), np.random.choice([1, -1, 2, -2]), np.random.choice([1, -1, 2, -2])])
+    result = step * corner
+    return result

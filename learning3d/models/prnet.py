@@ -21,6 +21,7 @@ from .. utils import Transformer, Identity
 from sklearn.metrics import r2_score
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+#device = torch.device('cpu')
 
 
 def pairwise_distance(src, tgt):

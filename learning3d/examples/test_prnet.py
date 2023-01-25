@@ -90,7 +90,8 @@ def options():
 						metavar='N', help='number of data loading workers (default: 4)')
 	parser.add_argument('-b', '--batch_size', default=1, type=int,
 						metavar='N', help='mini-batch size (default: 32)')
-	parser.add_argument('--pretrained', default='pretrained/exp_prnet/models/best_model.t7', type=str,
+	#parser.add_argument('--pretrained', default='pretrained/exp_prnet/models/best_model.t7', type=str,
+	parser.add_argument('--pretrained', default='checkpoints/exp_prnet/models/best_model.t7', type=str,
 						metavar='PATH', help='path to pretrained model file (default: null (no-use))')
 	parser.add_argument('--device', default='cuda:0', type=str,
 						metavar='DEVICE', help='use CUDA if available')
