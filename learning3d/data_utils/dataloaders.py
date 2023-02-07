@@ -83,8 +83,8 @@ def farthest_subsample_points(pointcloud1, num_subsampled_points=768):
 	num_points = pointcloud1.shape[0]
 	nbrs1 = NearestNeighbors(n_neighbors=num_subsampled_points, algorithm='auto',
 							 metric=lambda x, y: minkowski(x, y)).fit(pointcloud1[:, :3])
-	# random_p1 = np.random.random(size=(1, 3)) + np.array([[500, 500, 500]]) * np.random.choice([1, -1, 1, -1])
-	random_p1 = better_random_corner_sensor_imitation()
+	random_p1 = np.random.random(size=(1, 3)) + np.array([[500, 500, 500]]) * np.random.choice([1, -1, 1, -1])
+	#random_p1 = better_random_corner_sensor_imitation()
 	idx1 = nbrs1.kneighbors(random_p1, return_distance=False).reshape((num_subsampled_points,))
 	gt_mask = torch.zeros(num_points).scatter_(0, torch.tensor(idx1), 1)
 	return pointcloud1[idx1, :], gt_mask
@@ -239,7 +239,7 @@ class RegistrationData(Dataset):
 			self.transforms = RPMNetTransform(0.8, True)
 		if self.algorithm == 'DCP' or self.algorithm == 'PRNet':
 			from .. ops.transform_functions import DCPTransform
-			self.transforms = DCPTransform(angle_range=90, translation_range=1)
+			self.transforms = DCPTransform(angle_range=45, translation_range=1)
 		if self.algorithm == 'DeepGMR':
 			self.get_rri = get_rri_cuda if torch.cuda.is_available() else get_rri
 			from .. ops.transform_functions import DeepGMRTransform

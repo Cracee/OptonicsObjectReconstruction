@@ -40,7 +40,7 @@ def display_open3d(template, source, transformed_source):
 	transformed_source_.paint_uniform_color([0, 0, 1])
 	o3d.visualization.draw_geometries([template_, source_, transformed_source_])
 
-def test_one_epoch(device, model, test_loader):
+def test_one_epoch(device, model, test_loader, display):
 	model.eval()
 	test_loss = 0.0
 	pred  = 0.0
@@ -57,7 +57,9 @@ def test_one_epoch(device, model, test_loader):
 		igt = igt.to(device)
 
 		output = model(template, source, R_ab, translation_ab.squeeze(2))
-		display_open3d(template.detach().cpu().numpy()[0], source.detach().cpu().numpy()[0], output['transformed_source'].detach().cpu().numpy()[0])
+
+		if display:
+			display_open3d(template.detach().cpu().numpy()[0], source.detach().cpu().numpy()[0], output['transformed_source'].detach().cpu().numpy()[0])
 
 		test_loss += output['loss'].item()
 		count += 1
@@ -66,7 +68,8 @@ def test_one_epoch(device, model, test_loader):
 	return test_loss
 
 def test(args, model, test_loader):
-	test_loss = test_one_epoch(args.device, model, test_loader)
+	test_loss = test_one_epoch(args.device, model, test_loader, args.display)
+	print("Test Loss: ", str(test_loss))
 
 def options():
 	parser = argparse.ArgumentParser(description='Point Cloud Registration')
@@ -91,10 +94,13 @@ def options():
 	parser.add_argument('-b', '--batch_size', default=1, type=int,
 						metavar='N', help='mini-batch size (default: 32)')
 	#parser.add_argument('--pretrained', default='pretrained/exp_prnet/models/best_model.t7', type=str,
-	parser.add_argument('--pretrained', default='checkpoints/exp_prnet/models/best_model.t7', type=str,
+	#parser.add_argument('--pretrained', default='checkpoints/EXP_2_PRNet/models/best_model.t7', type=str,
+	parser.add_argument('--pretrained', default='checkpoints/EXP_4_PRNet_plain/models/best_model.t7', type=str,
+	#parser.add_argument('--pretrained', default='pretrained/exp_prnet/models/best_model.t7', type=str,
 						metavar='PATH', help='path to pretrained model file (default: null (no-use))')
 	parser.add_argument('--device', default='cuda:0', type=str,
 						metavar='DEVICE', help='use CUDA if available')
+	parser.add_argument('--display', default=False, type=bool, metavar='dis', help='show images while testing')
 
 	args = parser.parse_args()
 	return args
@@ -107,8 +113,8 @@ def main(own_data=False):
 	if not own_data:
 		testset = RegistrationData('PRNet', ModelNet40Data(train=False), partial_source=True, partial_template=True)
 	else:
-		#testset = RegistrationDataFragments('PRNet')
-		testset = SyntheticFragments('PRNet')
+		testset = RegistrationDataFragments('PRNet')
+		#testset = SyntheticFragments('PRNet')
 	train_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, drop_last=True, num_workers=args.workers)
 	test_loader = DataLoader(testset, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.workers)
 

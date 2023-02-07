@@ -10,6 +10,7 @@ import torchvision
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
+from pynvml import *
 
 from torch.autograd import Variable
 
@@ -84,22 +85,29 @@ def train_one_epoch(device, model, train_loader, optimizer):
 	pred  = 0.0
 	count = 0
 	for i, data in enumerate(tqdm(train_loader)):
+		optimizer.zero_grad()
+		get_gpu_status("first thing of the batch loop")
 		template, source, igt = data
+		get_gpu_status("Now is the data available")
 		transformations = get_transformations(igt)
 		transformations = [t.to(device) for t in transformations]
+		get_gpu_status("Now is the transformation on the device")
 		R_ab, translation_ab, R_ba, translation_ba = transformations
 
 		template = template.to(device)
 		source = source.to(device)
 		igt = igt.to(device)
+		get_gpu_status("Now is template and source on gpu")
 
 		output = model(template, source, R_ab, translation_ab.squeeze(2))
+		get_gpu_status("now is the output calculated")
 		loss_val = output['loss']
 
 		# forward + backward + optimize
-		optimizer.zero_grad()
+
 		loss_val.backward()
 		optimizer.step()
+		get_gpu_status("after optimizer step")
 
 		train_loss += loss_val.item()
 		count += 1
@@ -110,7 +118,8 @@ def train_one_epoch(device, model, train_loader, optimizer):
 def train(args, model, train_loader, test_loader, boardio, textio, checkpoint):
 	learnable_params = filter(lambda p: p.requires_grad, model.parameters())
 	if args.optimizer == 'Adam':
-		optimizer = torch.optim.Adam(learnable_params, lr=0.000125)
+		#optimizer = torch.optim.Adam(learnable_params, lr=0.000125)
+		optimizer = torch.optim.Adam(learnable_params)
 	else:
 		optimizer = torch.optim.SGD(learnable_params, lr=0.1)
 
@@ -119,6 +128,8 @@ def train(args, model, train_loader, test_loader, boardio, textio, checkpoint):
 		optimizer.load_state_dict(checkpoint['optimizer'])
 
 	best_test_loss = np.inf
+
+	get_gpu_status("starting the epoch loop")
 
 	for epoch in range(args.start_epoch, args.epochs):
 		train_loss = train_one_epoch(args.device, model, train_loader, optimizer)
@@ -184,6 +195,17 @@ def options():
 	args = parser.parse_args()
 	return args
 
+
+def get_gpu_status(message):
+	return
+	h = nvmlDeviceGetHandleByIndex(0)
+	info = nvmlDeviceGetMemoryInfo(h)
+	print(message)
+	print(f'total    : {info.total / 1000000000} GB')
+	print(f'free     : {info.free / 1000000000} GB')
+	print(f'used     : {info.used / 1000000000} GB')
+
+
 def main():
 	args = options()
 
@@ -191,6 +213,7 @@ def main():
 	torch.manual_seed(args.seed)
 	torch.cuda.manual_seed_all(args.seed)
 	np.random.seed(args.seed)
+	nvmlInit()
 
 	boardio = SummaryWriter(log_dir='checkpoints/' + args.exp_name)
 	_init_(args)
@@ -210,7 +233,12 @@ def main():
 
 	# Create PointNet Model.
 	model = PRNet(emb_dims=args.emb_dims, num_iters=args.num_iterations)
-	model = model.to(args.device)
+
+	nvmlInit()
+
+	get_gpu_status("The GPU before the model")
+	model.to(args.device)
+	get_gpu_status("After the model is loaded")
 
 	checkpoint = None
 	if args.resume:
@@ -225,12 +253,12 @@ def main():
 		print("Using a pretrained model!")
 		model.load_state_dict(torch.load(args.pretrained, map_location='cpu'))
 
-
 	model.to(args.device)
 
 	if args.eval:
 		test(args, model, test_loader, textio)
 	else:
+		get_gpu_status("Going into the train function")
 		train(args, model, train_loader, test_loader, boardio, textio, checkpoint)
 
 

@@ -14,6 +14,7 @@ from tqdm import tqdm
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from pynvml import *
 
 from .. ops import transform_functions as transform
 from .. utils import Transformer, Identity
@@ -233,7 +234,7 @@ class SVDHead(nn.Module):
         R = []
 
         for i in range(src.size(0)):
-            u, s, v = torch.svd(H[i])
+            u, s, v = torch.linalg.svd(H[i])
             r = torch.matmul(v, u.transpose(1, 0)).contiguous()
             r_det = torch.det(r).item()
             diag = torch.from_numpy(np.array([[1.0, 0, 0],
@@ -321,25 +322,33 @@ class PRNet(nn.Module):
     def predict_embedding(self, *input):
         src = input[0]
         tgt = input[1]
+        get_gpu_status("Inside Embedding")
         src_embedding = self.emb_nn(src)
         tgt_embedding = self.emb_nn(tgt)
+        get_gpu_status("After emb_nn")
 
         src_embedding_p, tgt_embedding_p = self.attention(src_embedding, tgt_embedding)
+        get_gpu_status("After attention")
 
         src_embedding = src_embedding + src_embedding_p
         tgt_embedding = tgt_embedding + tgt_embedding_p
 
         src, tgt, src_embedding, tgt_embedding = self.keypointnet(src, tgt, src_embedding, tgt_embedding)
+        get_gpu_status("after keypointnet")
 
         temperature, feature_disparity = self.temp_net(src_embedding, tgt_embedding)
+        get_gpu_status("after temp_net")
 
         return src, tgt, src_embedding, tgt_embedding, temperature, feature_disparity
     
     # Single Pass Alignment Module for PRNet
     def spam(self, *input):
         src, tgt, src_embedding, tgt_embedding, temperature, feature_disparity = self.predict_embedding(*input)
+        get_gpu_status("after the Embedding prediction")
         rotation_ab, translation_ab = self.head(src_embedding, tgt_embedding, src, tgt, temperature)
+        get_gpu_status("after the first head")
         rotation_ba, translation_ba = self.head(tgt_embedding, src_embedding, tgt, src, temperature)
+        get_gpu_status("after the second head")
         return rotation_ab, translation_ab, rotation_ba, translation_ba, feature_disparity
 
     def predict_keypoint_correspondence(self, *input):
@@ -355,6 +364,7 @@ class PRNet(nn.Module):
 
     def forward(self, *input):
         calculate_loss = False
+        get_gpu_status("Yeah, we are starting the forward pass")
         if len(input) == 2:
             src, tgt = input[0], input[1]
         elif len(input) == 3:
@@ -381,8 +391,11 @@ class PRNet(nn.Module):
         total_cycle_consistency_loss = 0
         total_scale_consensus_loss = 0
 
+        get_gpu_status("Not even started the iteration yet")
+
         for i in range(self.num_iters):
             rotation_ab_pred_i, translation_ab_pred_i, rotation_ba_pred_i, translation_ba_pred_i, feature_disparity = self.spam(src, tgt)
+            get_gpu_status("after the SPAM")
 
             rotation_ab_pred = torch.matmul(rotation_ab_pred_i, rotation_ab_pred)
             translation_ab_pred = torch.matmul(rotation_ab_pred_i, translation_ab_pred.unsqueeze(2)).squeeze(2) + translation_ab_pred_i
@@ -390,6 +403,7 @@ class PRNet(nn.Module):
             rotation_ba_pred = torch.matmul(rotation_ba_pred_i, rotation_ba_pred)
             translation_ba_pred = torch.matmul(rotation_ba_pred_i, translation_ba_pred.unsqueeze(2)).squeeze(2) + translation_ba_pred_i
 
+            get_gpu_status("Before the loss")
             if calculate_loss:
                 loss = (F.mse_loss(torch.matmul(rotation_ab_pred.transpose(2, 1), rotation_ab), identity) \
                        + F.mse_loss(translation_ab_pred, translation_ab)) * self.discount_factor**i
@@ -403,7 +417,8 @@ class PRNet(nn.Module):
                 total_feature_alignment_loss += feature_alignment_loss
                 total_cycle_consistency_loss += cycle_consistency_loss
                 total_loss = total_loss + loss + feature_alignment_loss + cycle_consistency_loss + scale_consensus_loss
-            
+
+            get_gpu_status("After the loss")
             if self.input_shape == 'bnc':
                 src = transform.transform_point_cloud(src.permute(0, 2, 1), rotation_ab_pred_i, translation_ab_pred_i).permute(0, 2, 1)
             else:
@@ -420,6 +435,16 @@ class PRNet(nn.Module):
         if calculate_loss:
             result['loss'] = total_loss
         return result
+
+
+def get_gpu_status(message):
+    return
+    h = nvmlDeviceGetHandleByIndex(0)
+    info = nvmlDeviceGetMemoryInfo(h)
+    print(message)
+    print(f'total    : {info.total / 1000000000} GB')
+    print(f'free     : {info.free / 1000000000} GB')
+    print(f'used     : {info.used / 1000000000} GB')
 
 
 if __name__ == '__main__':
