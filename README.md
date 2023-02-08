@@ -22,7 +22,7 @@ In `nxlib_tutorials` you can find some Tutorials from the Ensenso SDK Website. T
 
 The `OMNet_Pytorch-main` contains the Deep Learning implementation of [OMNet] from their official github [OMNet_Pytorch]. It is already transformed to fit our needs with new dataloaders that can load out own 3d models.
 
-The `prnet-master` contains the implementation of [PRNet] from their official github [prnet-master]. It is momentarily worked on, to work with our stuff.
+The `prnet-master` contains the implementation of [PRNet] from their official github [prnet-master]. It is not working with newer versions of CUDA and runs into NaN Bugs. Therefore we changed to using `learning3d`.
 
 The `UTOPIC-main` folders contain another DL approach, which I haven't worked on yet. It is the official implementation of [UTOPIC] from their github [UTOPIC-main]. Soon to come. 
 
