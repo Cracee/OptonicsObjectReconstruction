@@ -26,6 +26,8 @@ The `prnet-master` contains the implementation of [PRNet] from their official gi
 
 The `UTOPIC-main` folders contain another DL approach, which I haven't worked on yet. It is the official implementation of [UTOPIC] from their github [UTOPIC-main]. Soon to come. 
 
+In `learning3d` there is a whole library of DL Nets to use, but we only need the [PRNet] implementation, that is way more cleaner and doesen't throw errors like crazy. It comes from the official [learning3d] github repo.
+
 <details><summary>Do not click to open</summary>
   <ul>
     <li>Got you!</li>
@@ -41,4 +43,5 @@ The `UTOPIC-main` folders contain another DL approach, which I haven't worked on
 [prnet-master]: https://github.com/WangYueFt/prnet
 [PRNet]: https://arxiv.org/pdf/1910.12240.pdf
 [UTOPIC-main]: https://github.com/ZhileiChen99/UTOPIC
+[learning3d]: https://github.com/vinits5/learning3d
 [UTOPIC]: https://arxiv.org/pdf/2208.02712.pdf
