@@ -13,6 +13,8 @@ from dataset.transformations import fetch_transform
 
 from visualize.visualizer import generate_pointcloud
 
+import open3d as o3d
+
 _logger = logging.getLogger(__name__)
 
 
@@ -159,7 +161,7 @@ class RealMeasuredObjects(Dataset):
     def _read_file(self, item):
         data_path = self._data[item]
         meta_path = self._root + "/" + data_path
-        point_cloud = io.read_point_cloud(meta_path)
+        point_cloud = o3d.io.read_point_cloud(meta_path)
         return np.asarray(point_cloud.points)
 
     def to_category(self, i):

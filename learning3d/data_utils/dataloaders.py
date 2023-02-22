@@ -215,7 +215,7 @@ class ClassificationData(Dataset):
 
 
 class RegistrationData(Dataset):
-	def __init__(self, algorithm, data_class=ModelNet40Data(), partial_source=False, partial_template=False, noise=False, additional_params={}):
+	def __init__(self, algorithm, data_class=ModelNet40Data(), partial_source=False, partial_template=False, noise=False, half_fragments=False, additional_params={}):
 		super(RegistrationData, self).__init__()
 		available_algorithms = ['PCRNet', 'PointNetLK', 'DCP', 'PRNet', 'iPCRNet', 'RPMNet', 'DeepGMR']
 		if algorithm in available_algorithms: self.algorithm = algorithm
@@ -227,6 +227,7 @@ class RegistrationData(Dataset):
 		self.noise = noise
 		self.additional_params = additional_params
 		self.use_rri = False
+		self.half_fragments = half_fragments
 
 		if self.algorithm == 'PCRNet' or self.algorithm == 'iPCRNet':
 			from .. ops.transform_functions import PCRNetTransform
@@ -259,9 +260,15 @@ class RegistrationData(Dataset):
 		self.transforms.index = index				# for fixed transformations in PCRNet.
 		source = self.transforms(template)
 
+		if self.half_fragments:
+			number_of_points = source.shape[0]
+			number_of_points = int(number_of_points * 0.5)
+		else:
+			number_of_points = 768
+
 		# Check for Partial Data.
-		if self.partial_source: source, self.source_mask = farthest_subsample_points(source)
-		if self.partial_template: template, self.template_mask = farthest_subsample_points(template)
+		if self.partial_source: source, self.source_mask = farthest_subsample_points(source, num_subsampled_points=number_of_points)
+		if self.partial_template: template, self.template_mask = farthest_subsample_points(template, num_subsampled_points=number_of_points)
 
 		# Check for Noise in Source Data.
 		if self.noise: source = jitter_pointcloud(source)

@@ -1,0 +1,277 @@
+[
+	{
+		"Depth": 800,
+		"Fixed": true,
+		"Height": 500,
+		"Lighting": {
+			"Ambient": 0.5,
+			"Color": [
+				0.599999999999999978,
+				0.599999999999999978,
+				0.599999999999999978
+			],
+			"Diffuse": 0.5,
+			"MaterialBlur": 0,
+			"Shininess": 50,
+			"Specular": 0.200000000000000011
+		},
+		"Link": {
+			"Inverse": true,
+			"Rotation": {
+				"Angle": 3.14159265358979312,
+				"Axis": [
+					1,
+					0,
+					0
+				]
+			},
+			"Target": null,
+			"Translation": [
+				0,
+				0,
+				0
+			]
+		},
+		"Mass": 1,
+		"Type": "Box",
+		"Width": 1200
+	},
+	{
+		"Filename": "C:\/Users\/Grego\/Documents\/Universit\u00E4t\/Master V\/Optonics Projekt\/3D Objekte\/Planierraupe.stl",
+		"Fixed": false,
+		"Lighting": {
+			"Ambient": 0.5,
+			"Color": [
+				1,
+				1,
+				0.498039215686274517
+			],
+			"Diffuse": 0.5,
+			"MaterialBlur": 0,
+			"Shininess": 50,
+			"Specular": 0.200000000000000011
+		},
+		"Link": {
+			"Inverse": true,
+			"Rotation": {
+				"Angle": 1.52893238546759669,
+				"Axis": [
+					0.0644490964343055889,
+					-0.995602864714942415,
+					0.0679797744936087162
+				]
+			},
+			"Target": null,
+			"Translation": [
+				-13.1251309405840324,
+				61.3275193108521179,
+				-90.4672057968986252
+			]
+		},
+		"Mass": 1
+	},
+	{
+		"Filename": "C:\/Users\/Grego\/Documents\/Universit\u00E4t\/Master V\/Optonics Projekt\/3D Objekte\/Planierraupe.stl",
+		"Fixed": false,
+		"Lighting": {
+			"Ambient": 0.5,
+			"Color": [
+				1,
+				1,
+				0.498039215686274517
+			],
+			"Diffuse": 0.5,
+			"MaterialBlur": 0,
+			"Shininess": 50,
+			"Specular": 0.200000000000000011
+		},
+		"Link": {
+			"Inverse": true,
+			"Rotation": {
+				"Angle": 3.06512297706455428,
+				"Axis": [
+					-0.690157258002161988,
+					-0.0363894181077334816,
+					-0.722743916942036768
+				]
+			},
+			"Target": null,
+			"Translation": [
+				34.9611177968341167,
+				65.847481853296685,
+				-90.4665703564309354
+			]
+		},
+		"Mass": 1
+	},
+	{
+		"Filename": "C:\/Users\/Grego\/Documents\/Universit\u00E4t\/Master V\/Optonics Projekt\/3D Objekte\/Planierraupe.stl",
+		"Fixed": false,
+		"Lighting": {
+			"Ambient": 0.5,
+			"Color": [
+				1,
+				1,
+				0.498039215686274517
+			],
+			"Diffuse": 0.5,
+			"MaterialBlur": 0,
+			"Shininess": 50,
+			"Specular": 0.200000000000000011
+		},
+		"Link": {
+			"Inverse": true,
+			"Rotation": {
+				"Angle": 2.9024365794682061,
+				"Axis": [
+					0.167871273486038253,
+					0.668836982838115435,
+					0.724207377707644206
+				]
+			},
+			"Target": null,
+			"Translation": [
+				168.492480898063718,
+				67.4394243237551052,
+				-79.0340501714213559
+			]
+		},
+		"Mass": 1
+	},
+	{
+		"Filename": "C:\/Users\/Grego\/Documents\/Universit\u00E4t\/Master V\/Optonics Projekt\/3D Objekte\/Planierraupe.stl",
+		"Fixed": false,
+		"Lighting": {
+			"Ambient": 0.5,
+			"Color": [
+				1,
+				1,
+				0.498039215686274517
+			],
+			"Diffuse": 0.5,
+			"MaterialBlur": 0,
+			"Shininess": 50,
+			"Specular": 0.200000000000000011
+		},
+		"Link": {
+			"Inverse": true,
+			"Rotation": {
+				"Angle": 2.53346976442604843,
+				"Axis": [
+					-0.240436077736932541,
+					-0.676138682298869531,
+					0.69643878038319218
+				]
+			},
+			"Target": null,
+			"Translation": [
+				107.401944227825339,
+				-36.178442407094451,
+				-79.02896813955563
+			]
+		},
+		"Mass": 1
+	},
+	{
+		"Filename": "C:\/Users\/Grego\/Documents\/Universit\u00E4t\/Master V\/Optonics Projekt\/3D Objekte\/Planierraupe.stl",
+		"Fixed": false,
+		"Lighting": {
+			"Ambient": 0.5,
+			"Color": [
+				1,
+				1,
+				0.498039215686274517
+			],
+			"Diffuse": 0.5,
+			"MaterialBlur": 0,
+			"Shininess": 50,
+			"Specular": 0.200000000000000011
+		},
+		"Link": {
+			"Inverse": true,
+			"Rotation": {
+				"Angle": 2.83673780851139812,
+				"Axis": [
+					0.683074152607358043,
+					-0.146614280443524314,
+					0.715481624369045166
+				]
+			},
+			"Target": null,
+			"Translation": [
+				-21.7249570039191404,
+				-45.6848830645423831,
+				-90.4755768962998701
+			]
+		},
+		"Mass": 1
+	},
+	{
+		"Filename": "C:\/Users\/Grego\/Documents\/Universit\u00E4t\/Master V\/Optonics Projekt\/3D Objekte\/Planierraupe.stl",
+		"Fixed": false,
+		"Lighting": {
+			"Ambient": 0.5,
+			"Color": [
+				1,
+				1,
+				0.498039215686274517
+			],
+			"Diffuse": 0.5,
+			"MaterialBlur": 0,
+			"Shininess": 50,
+			"Specular": 0.200000000000000011
+		},
+		"Link": {
+			"Inverse": true,
+			"Rotation": {
+				"Angle": 1.71569197978313515,
+				"Axis": [
+					0.776988956276876697,
+					-0.464211735047601437,
+					-0.425200690107465973
+				]
+			},
+			"Target": null,
+			"Translation": [
+				-79.0111309759750355,
+				47.0429521771470647,
+				-79.0335608215742695
+			]
+		},
+		"Mass": 1
+	},
+	{
+		"Filename": "C:\/Users\/Grego\/Documents\/Universit\u00E4t\/Master V\/Optonics Projekt\/3D Objekte\/Planierraupe.stl",
+		"Fixed": false,
+		"Lighting": {
+			"Ambient": 0.5,
+			"Color": [
+				1,
+				1,
+				0.498039215686274517
+			],
+			"Diffuse": 0.5,
+			"MaterialBlur": 0,
+			"Shininess": 50,
+			"Specular": 0.200000000000000011
+		},
+		"Link": {
+			"Inverse": true,
+			"Rotation": {
+				"Angle": 3.14159248405470137,
+				"Axis": [
+					0.518539398004597252,
+					-0.855053736742045434,
+					-7.03437996433532414e-07
+				]
+			},
+			"Target": null,
+			"Translation": [
+				224.528128571791541,
+				35.0351838203882977,
+				-60.0200185248773792
+			]
+		},
+		"Mass": 1
+	}
+]

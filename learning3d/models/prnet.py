@@ -234,7 +234,7 @@ class SVDHead(nn.Module):
         R = []
 
         for i in range(src.size(0)):
-            u, s, v = torch.linalg.svd(H[i])
+            u, s, v = torch.svd(H[i])
             r = torch.matmul(v, u.transpose(1, 0)).contiguous()
             r_det = torch.det(r).item()
             diag = torch.from_numpy(np.array([[1.0, 0, 0],
@@ -248,7 +248,7 @@ class SVDHead(nn.Module):
         t = torch.matmul(-R, src.mean(dim=2, keepdim=True)) + src_corr.mean(dim=2, keepdim=True)
         if self.training:
             self.my_iter += 1
-        return R, t.view(batch_size, 3)
+        return R, t.view(batch_size, 3), scores
 
 
 class KeyPointNet(nn.Module):
@@ -345,14 +345,18 @@ class PRNet(nn.Module):
     def spam(self, *input):
         src, tgt, src_embedding, tgt_embedding, temperature, feature_disparity = self.predict_embedding(*input)
         get_gpu_status("after the Embedding prediction")
-        rotation_ab, translation_ab = self.head(src_embedding, tgt_embedding, src, tgt, temperature)
+        rotation_ab, translation_ab, score = self.head(src_embedding, tgt_embedding, src, tgt, temperature)
         get_gpu_status("after the first head")
-        rotation_ba, translation_ba = self.head(tgt_embedding, src_embedding, tgt, src, temperature)
+        rotation_ba, translation_ba, _ = self.head(tgt_embedding, src_embedding, tgt, src, temperature)
         get_gpu_status("after the second head")
-        return rotation_ab, translation_ab, rotation_ba, translation_ba, feature_disparity
+        return rotation_ab, translation_ab, rotation_ba, translation_ba, feature_disparity, score
 
     def predict_keypoint_correspondence(self, *input):
-        src, tgt, src_embedding, tgt_embedding, temperature, _ = self.predict_embedding(*input)
+        if len(input) == 2:
+            src, tgt = input[0], input[1]
+        if self.input_shape == 'bnc':
+            src, tgt = src.permute(0, 2, 1), tgt.permute(0, 2, 1)
+        src, tgt, src_embedding, tgt_embedding, temperature, _ = self.predict_embedding(src, tgt)
         batch_size, num_dims, num_points = src.size()
         d_k = src_embedding.size(1)
         scores = torch.matmul(src_embedding.transpose(2, 1).contiguous(), tgt_embedding) / math.sqrt(d_k)
@@ -393,8 +397,10 @@ class PRNet(nn.Module):
 
         get_gpu_status("Not even started the iteration yet")
 
+        scores = []
+
         for i in range(self.num_iters):
-            rotation_ab_pred_i, translation_ab_pred_i, rotation_ba_pred_i, translation_ba_pred_i, feature_disparity = self.spam(src, tgt)
+            rotation_ab_pred_i, translation_ab_pred_i, rotation_ba_pred_i, translation_ba_pred_i, feature_disparity, score = self.spam(src, tgt)
             get_gpu_status("after the SPAM")
 
             rotation_ab_pred = torch.matmul(rotation_ab_pred_i, rotation_ab_pred)
@@ -419,6 +425,7 @@ class PRNet(nn.Module):
                 total_loss = total_loss + loss + feature_alignment_loss + cycle_consistency_loss + scale_consensus_loss
 
             get_gpu_status("After the loss")
+            scores.append(score)
             if self.input_shape == 'bnc':
                 src = transform.transform_point_cloud(src.permute(0, 2, 1), rotation_ab_pred_i, translation_ab_pred_i).permute(0, 2, 1)
             else:
@@ -430,7 +437,8 @@ class PRNet(nn.Module):
         result = {'est_R': rotation_ab_pred,
                   'est_t': translation_ab_pred,
                   'est_T': transform.convert2transformation(rotation_ab_pred, translation_ab_pred),
-                  'transformed_source': src}
+                  'transformed_source': src,
+                  'scores': scores}
 
         if calculate_loss:
             result['loss'] = total_loss

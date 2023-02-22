@@ -576,12 +576,12 @@ class PRNetTorch:
             random_p1 = np.random.random(size=(1, 3)) + np.array(
                 [[500, 500, 500]]
             ) * np.random.choice([1, -1, 1, -1])
-            random_p1 = self.random_corner_partial()
-            idx1 = self.knn(src, random_p1, k=768)
+            #random_p1 = self.random_corner_partial()
+            idx1 = self.knn(src, random_p1, k=512)
             random_p2 = np.random.random(size=(1, 3)) + np.array([[500, 500, 500]]) * np.random.choice([1, -1, 2, -2])
-            random_p2 = self.random_corner_partial()
+            #random_p2 = self.random_corner_partial()
             # random_p2 = random_p1
-            idx2 = self.knn(ref, random_p2, k=768)
+            idx2 = self.knn(ref, random_p2, k=512)
         else:
             idx1 = (np.random.choice(src.shape[0], 1024, replace=False),)
             idx2 = (np.random.choice(ref.shape[0], 1024, replace=False),)

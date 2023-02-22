@@ -85,6 +85,9 @@ def visualize_result(net_output, data_batch):
         point_ref = translate_np_to_pcd(item_ref)
         point_ref.paint_uniform_color([0.0, 0.0, 1.0])
 
-        o3d.visualization.draw_geometries([point_ref, point_source, axes])
-        o3d.visualization.draw_geometries([point_ref, point_trans, axes])
+        #o3d.visualization.draw_geometries([point_ref, point_source, axes])
+        #o3d.visualization.draw_geometries([point_ref, point_source])
+        #o3d.visualization.draw_geometries([point_ref, point_trans, axes])
+        o3d.visualization.draw_geometries([point_ref, point_trans, point_source])
+        break
 

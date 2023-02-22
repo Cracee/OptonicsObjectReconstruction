@@ -28,17 +28,51 @@ def get_transformations(igt):
 	translation_ab = -torch.bmm(R_ab, translation_ba)   # Pt = Ps + t_ab
 	return R_ab, translation_ab, R_ba, translation_ba
 
-def display_open3d(template, source, transformed_source):
+def display_open3d(template, source, transformed_source, extra_data=None, all_it_score=None):
 	template_ = o3d.geometry.PointCloud()
 	source_ = o3d.geometry.PointCloud()
 	transformed_source_ = o3d.geometry.PointCloud()
+
 	template_.points = o3d.utility.Vector3dVector(template)
 	source_.points = o3d.utility.Vector3dVector(source + np.array([0,0,0]))
 	transformed_source_.points = o3d.utility.Vector3dVector(transformed_source)
 	template_.paint_uniform_color([1, 0, 0])
 	source_.paint_uniform_color([0, 1, 0])
 	transformed_source_.paint_uniform_color([0, 0, 1])
+	if extra_data:
+		extra_source, extra_target, extra_scores = extra_data
+		extra_source = extra_source[0].permute(1, 0)
+		extra_target = extra_target[0].permute(1, 0)
+		extra_source = extra_source.detach().cpu().numpy()
+		extra_target_plus = extra_target.detach().cpu().numpy()
+		extra_target_ = o3d.geometry.PointCloud()
+		extra_source_ = o3d.geometry.PointCloud()
+		extra_target_.points = o3d.utility.Vector3dVector(extra_target_plus)
+		extra_source_.points = o3d.utility.Vector3dVector(extra_source + np.array([0, 0, 0]))
+		extra_source_.paint_uniform_color([0, 0, 0])
+		extra_target_.paint_uniform_color([0, 0, 0])
+		for item in all_it_score:
+			extra_scores = item.detach().cpu().numpy()[0]
+			length = len(extra_target_plus)
+
+			lines = [[i, argmax(extra_scores[i]) + length]for i in range(length)]
+
+			points = np.concatenate((extra_target_plus, extra_source), axis=0)
+			colors = [[1, 0, 0] for i in range(len(lines))]
+			line_set = o3d.geometry.LineSet()
+			line_set.points = o3d.utility.Vector3dVector(points)
+			line_set.lines = o3d.utility.Vector2iVector(lines)
+			line_set.colors = o3d.utility.Vector3dVector(colors)
+
+			o3d.visualization.draw_geometries([line_set])
+
+			o3d.visualization.draw_geometries([template_, source_, extra_source_, extra_target_, line_set])
 	o3d.visualization.draw_geometries([template_, source_, transformed_source_])
+
+
+def argmax(iterable):
+	return max(enumerate(iterable), key=lambda x: x[1])[0]
+
 
 def test_one_epoch(device, model, test_loader, display):
 	model.eval()
@@ -54,12 +88,16 @@ def test_one_epoch(device, model, test_loader, display):
 
 		template = template.to(device)
 		source = source.to(device)
+		t1 = template.clone()
+		s1 = source.clone()
 		igt = igt.to(device)
 
 		output = model(template, source, R_ab, translation_ab.squeeze(2))
 
+		extra_data = model.predict_keypoint_correspondence(t1, s1)
+
 		if display:
-			display_open3d(template.detach().cpu().numpy()[0], source.detach().cpu().numpy()[0], output['transformed_source'].detach().cpu().numpy()[0])
+			display_open3d(template.detach().cpu().numpy()[0], source.detach().cpu().numpy()[0], output['transformed_source'].detach().cpu().numpy()[0], extra_data, output['scores'])
 
 		test_loss += output['loss'].item()
 		count += 1
@@ -95,12 +133,12 @@ def options():
 						metavar='N', help='mini-batch size (default: 32)')
 	#parser.add_argument('--pretrained', default='pretrained/exp_prnet/models/best_model.t7', type=str,
 	#parser.add_argument('--pretrained', default='checkpoints/EXP_2_PRNet/models/best_model.t7', type=str,
-	parser.add_argument('--pretrained', default='checkpoints/EXP_4_PRNet_plain/models/best_model.t7', type=str,
-	#parser.add_argument('--pretrained', default='pretrained/exp_prnet/models/best_model.t7', type=str,
+	#parser.add_argument('--pretrained', default='checkpoints/EXP_5_PRNet_50Perc/models/best_model.t7', type=str,
+	parser.add_argument('--pretrained', default='pretrained/exp_prnet/models/best_model.t7', type=str,
 						metavar='PATH', help='path to pretrained model file (default: null (no-use))')
 	parser.add_argument('--device', default='cuda:0', type=str,
 						metavar='DEVICE', help='use CUDA if available')
-	parser.add_argument('--display', default=False, type=bool, metavar='dis', help='show images while testing')
+	parser.add_argument('--display', default=True, type=bool, metavar='dis', help='show images while testing')
 
 	args = parser.parse_args()
 	return args
@@ -132,6 +170,7 @@ def main(own_data=False):
 	model.to(args.device)
 
 	test(args, model, test_loader)
+
 
 if __name__ == '__main__':
 	main()
