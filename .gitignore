@@ -14,7 +14,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -166,3 +165,6 @@ learning3d/pretrained/exp_pcn
 learning3d/pretrained/exp_pnlk
 learning3d/pretrained/exp_rpmnet
 learning3d/venv
+
+Point-Cloud-Registration-master/bunny
+learning3d/utils/lib
