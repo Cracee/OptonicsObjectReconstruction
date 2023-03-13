@@ -15,7 +15,7 @@ downloads/
 eggs/
 .eggs/
 lib64/
-parts/
+parts/ccccccc
 sdist/
 var/
 wheels/
@@ -166,5 +166,5 @@ learning3d/pretrained/exp_pnlk
 learning3d/pretrained/exp_rpmnet
 learning3d/venv
 
-Point-Cloud-Registration-master/bunny
+custom-ICP/bunny
 learning3d/utils/lib
