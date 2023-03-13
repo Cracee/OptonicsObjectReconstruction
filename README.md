@@ -24,9 +24,9 @@ The `OMNet_Pytorch-main` contains the Deep Learning implementation of [OMNet] fr
 
 The `prnet-master` contains the implementation of [PRNet] from their official github [prnet-master]. It is not working with newer versions of CUDA and runs into NaN Bugs. Therefore we changed to using `learning3d`.
 
-The `UTOPIC-main` folders contain another DL approach, which I haven't worked on yet. It is the official implementation of [UTOPIC] from their github [UTOPIC-main]. Soon to come. 
-
 In `learning3d` there is a whole library of DL Nets to use, but we only need the [PRNet] implementation, that is way more cleaner and doesen't throw errors like crazy. It comes from the official [learning3d] github repo.
+
+In `custom-ICP` there is the github Repo of an custom ICP implementation by Reilly Bova ([Point Cloud Registration]), which is used for the hybrid approach in combining the Deep Learning with the classic algorithms.
 
 <details><summary>Do not click to open</summary>
   <ul>
@@ -42,6 +42,6 @@ In `learning3d` there is a whole library of DL Nets to use, but we only need the
 [OMNet]: https://openaccess.thecvf.com/content/ICCV2021/papers/Xu_OMNet_Learning_Overlapping_Mask_for_Partial-to-Partial_Point_Cloud_Registration_ICCV_2021_paper.pdf
 [prnet-master]: https://github.com/WangYueFt/prnet
 [PRNet]: https://arxiv.org/pdf/1910.12240.pdf
-[UTOPIC-main]: https://github.com/ZhileiChen99/UTOPIC
 [learning3d]: https://github.com/vinits5/learning3d
 [UTOPIC]: https://arxiv.org/pdf/2208.02712.pdf
+[Point Cloud Registration]: https://github.com/ReillyBova/Point-Cloud-Registration
