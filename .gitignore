@@ -166,5 +166,5 @@ learning3d/pretrained/exp_pnlk
 learning3d/pretrained/exp_rpmnet
 learning3d/venv
 
-custom-ICP/bunny
+customICP/bunny
 learning3d/utils/lib
