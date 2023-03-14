@@ -26,7 +26,7 @@ The `prnet-master` contains the implementation of [PRNet] from their official gi
 
 In `learning3d` there is a whole library of DL Nets to use, but we only need the [PRNet] implementation, that is way more cleaner and doesen't throw errors like crazy. It comes from the official [learning3d] github repo.
 
-In `custom-ICP` there is the github Repo of an custom ICP implementation by Reilly Bova ([Point Cloud Registration]), which is used for the hybrid approach in combining the Deep Learning with the classic algorithms.
+In `customICP` there is the github Repo of an custom ICP implementation by Chengkun Li ([ICP]), which is used for the hybrid approach in combining the Deep Learning with the classic algorithms.
 
 <details><summary>Do not click to open</summary>
   <ul>
@@ -44,4 +44,4 @@ In `custom-ICP` there is the github Repo of an custom ICP implementation by Reil
 [PRNet]: https://arxiv.org/pdf/1910.12240.pdf
 [learning3d]: https://github.com/vinits5/learning3d
 [UTOPIC]: https://arxiv.org/pdf/2208.02712.pdf
-[Point Cloud Registration]: https://github.com/ReillyBova/Point-Cloud-Registration
+[ICP]: https://github.com/chengkunli96/ICP
