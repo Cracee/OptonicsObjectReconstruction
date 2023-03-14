@@ -1,9 +1,11 @@
 """"""
 
 import numpy as np
-import trimesh
 from sklearn.neighbors import NearestNeighbors
 import transformations as transform
+import open3d as o3d
+
+RADIUS_NORMAL = 0.1
 
 
 def best_fit_transform_point2plane(A, B, normals):
@@ -124,8 +126,7 @@ def nearest_neighbor(src, dst):
     return distances.ravel(), indices.ravel()
 
 
-def icp(src_tm: "<class 'trimesh'>", dst_tm: "<class 'trimesh'>",
-        init_pose=None, max_iterations=20, tolerance=None, samplerate=1):
+def icp(src_tm, dst_tm, init_pose=None, max_iterations=20, tolerance=None, samplerate=1):
     """
     The Iterative Closest Point method: finds best-fit transform that maps points A on to points B
     Input:
@@ -140,11 +141,26 @@ def icp(src_tm: "<class 'trimesh'>", dst_tm: "<class 'trimesh'>",
         MeanError: list, report each iteration's distance mean error
     """
 
-    # get vertices and their normals
-    src_pts = np.array(src_tm.vertices)
-    dst_pts = np.array(dst_tm.vertices)
-    src_pt_normals = np.array(src_tm.vertex_normals)
-    dst_pt_normals = np.array(dst_tm.vertex_normals)
+    style = "trimesh"
+
+    if style == "trimesh":
+        # get vertices and their normals from trimesh
+        src_pts = np.array(src_tm.vertices)
+        dst_pts = np.array(dst_tm.vertices)
+        src_pt_normals = np.array(src_tm.vertex_normals)
+        dst_pt_normals = np.array(dst_tm.vertex_normals)
+    elif style == "open3d":
+        # get vertices and their normals from point cloud
+        src_pts = np.asarray(src_tm.points)
+        dst_pts = np.asarray(dst_tm.points)
+        src_tm.estimate_normals(
+            o3d.geometry.KDTreeSearchParamHybrid(radius=RADIUS_NORMAL, max_nn=30)
+        )
+        dst_tm.estimate_normals(
+            o3d.geometry.KDTreeSearchParamHybrid(radius=RADIUS_NORMAL, max_nn=30)
+        )
+        src_pt_normals = np.asarray(src_tm.normals)[:]
+        dst_pt_normals = np.asarray(dst_tm.normals)[:]
 
     # subsampling
     ids = np.random.uniform(0, 1, size=src_pts.shape[0])
