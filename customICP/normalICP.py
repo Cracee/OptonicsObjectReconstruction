@@ -141,7 +141,7 @@ def icp(src_tm, dst_tm, init_pose=None, max_iterations=20, tolerance=None, sampl
         MeanError: list, report each iteration's distance mean error
     """
 
-    style = "trimesh"
+    style = "open3d"
 
     if style == "trimesh":
         # get vertices and their normals from trimesh
@@ -192,11 +192,12 @@ def icp(src_tm, dst_tm, init_pose=None, max_iterations=20, tolerance=None, sampl
 
         # match each point of source-set to closest point of destination-set,
         matched_src_pts = src[:m, :].T.copy()
-        matched_dst_pts = dst[:m, indices].T
+        matched_dst_pts = dst[:m, :].T
 
         # compute angle between 2 matched vertexs' normals
         matched_src_pt_normals = A_normals.copy()
-        matched_dst_pt_normals = B_normals[indices, :]
+        matched_dst_pt_normals = B_normals.copy()
+
         angles = np.zeros(matched_src_pt_normals.shape[0])
         for k in range(matched_src_pt_normals.shape[0]):
             v1 = matched_src_pt_normals[k, :]
@@ -223,7 +224,7 @@ def icp(src_tm, dst_tm, init_pose=None, max_iterations=20, tolerance=None, sampl
         src = np.dot(T, src)
 
         # print iteration
-        print('\ricp iteration: %d/%d ...' % (i+1, max_iterations), end='', flush=True)
+        print('\ricp iteration: %d/%d  %s...' % (i+1, max_iterations, str(distances.mean())), end='', flush=True)
 
         # check error
         mean_error = np.mean(distances[reject_part_flag])
