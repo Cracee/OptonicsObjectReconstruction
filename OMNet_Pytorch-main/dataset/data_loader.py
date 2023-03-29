@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from dataset.transformations import fetch_transform
 
-from visualize.visualizer import generate_pointcloud
+from visualize.visualizer import generate_pointcloud, generate_pointcloud_ply
 
 import open3d as o3d
 
@@ -125,7 +125,7 @@ class RealMeasuredObjects(Dataset):
         transform=None,
     ):
         """Virtual Objects created by Gregor in dataset form."""
-        dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/registration/data/7_cylin_order"
+        dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/registration/data/7_RAMP_order"
 
         self._logger = logging.getLogger(self.__class__.__name__)
         self._root = dataset_path
@@ -199,6 +199,104 @@ class RealMeasuredObjects(Dataset):
 
         idx = int(self._data[item][-5:-4])
         sample = {"points_1": numpy_points_1, "points_2": numpy_points_2, "label": np.array([0]), "idx": idx}
+
+        if self._transform:
+            sample = self._transform(sample)
+        return sample
+
+    def __len__(self):
+        return len(self._data)
+
+
+
+class StanfordData(Dataset):
+    def __init__(
+        self,
+        dataset_mode= "stanford",
+        subset: str = "train",
+        categories=None,
+        transform=None,
+        resample=True
+    ):
+        """Stanford Scannning Repo in dataset form."""
+        dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/data/stanford"
+
+        self._logger = logging.getLogger(self.__class__.__name__)
+        self._root = dataset_path
+        self._subset = subset
+
+        metadata_fpath = os.path.join(
+            self._root, "modelnet_{}_{}.pickle".format(dataset_mode, subset)
+        )
+        self._logger.info(
+            "Loading dataset from {} for {}".format(metadata_fpath, subset)
+        )
+        if not os.path.exists(os.path.join(dataset_path)):
+            assert FileNotFoundError("Not found dataset_path: {}".format(dataset_path))
+
+        self._data = self._read_folder(dataset_path)
+        self._classes = None
+        self._idx2category = None
+        self.eval_type = ["test"]
+
+        self._transform = transform
+        self._logger.info("Loaded {} {} instances.".format(len(self._data), subset))
+        self._resample = resample
+
+    @property
+    def classes(self):
+        return self._classes
+
+    @staticmethod
+    def _read_folder(folder_name):
+        onlyfiles = [f for f in os.listdir(folder_name) if isfile(join(folder_name, f))]
+        all_files = []
+        for item in onlyfiles:
+            for i in range(8):
+                all_files.append(item)
+
+        return all_files
+
+    def _read_file(self, item):
+        data_path = self._data[item]
+        meta_path = self._root + "/" + data_path
+        point_cloud = o3d.io.read_point_cloud(meta_path)
+        return np.asarray(point_cloud.points)
+
+    def to_category(self, i):
+        return self._idx2category[i]
+
+    def normalise_pcd_with_respect(self, points_a, points_b):
+        centroid = np.mean(points_a, axis=0)
+        points_a -= centroid
+        furthest_distance_a = np.max(np.sqrt(np.sum(abs(points_a) ** 2, axis=-1)))
+
+        centroid = np.mean(points_b, axis=0)
+        points_b -= centroid
+        furthest_distance_b = np.max(np.sqrt(np.sum(abs(points_b) ** 2, axis=-1)))
+
+        if furthest_distance_a > furthest_distance_b:
+            furthest_distance = furthest_distance_a
+        else:
+            furthest_distance = furthest_distance_b
+        points_a /= furthest_distance
+        points_b /= furthest_distance
+
+        return points_a, points_b
+
+    def __getitem__(self, index):
+
+        data_path = self._data[index]
+        meta_path = self._root + "/" + data_path
+
+        idx = 0
+
+        if self._resample:
+            numpy_pcd, numpy_pcd2 = generate_pointcloud(meta_path, 1024, resampled=True)
+            sample = {"points": numpy_pcd, "points_resampled": numpy_pcd, "label": np.array([0]), "idx": idx}
+        else:
+            numpy_pcd = generate_pointcloud(meta_path, 1024, resampled=False)
+            sample = {"points": numpy_pcd, "label": np.array([0]), "idx": idx}
 
         if self._transform:
             sample = self._transform(sample)
@@ -365,6 +463,7 @@ def fetch_dataloader(params):
             transform=test_transforms,
             number_of_points=params.num_points
         )
+        test_ds = StanfordData(transform=test_transforms)
 
     else:
         raise NotImplementedError

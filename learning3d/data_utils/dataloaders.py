@@ -83,7 +83,7 @@ def farthest_subsample_points(pointcloud1, num_subsampled_points=768):
 	num_points = pointcloud1.shape[0]
 	nbrs1 = NearestNeighbors(n_neighbors=num_subsampled_points, algorithm='auto',
 							 metric=lambda x, y: minkowski(x, y)).fit(pointcloud1[:, :3])
-	random_p1 = np.random.random(size=(1, 3)) + np.array([[500, 500, 500]]) * np.random.choice([1, -1, 1, -1])
+	random_p1 = np.random.random(size=(1, 3)) + np.array([[500, 500, 500]]) * np.random.choice([1, -1, 1, -1]) #############################################
 	#random_p1 = better_random_corner_sensor_imitation()
 	idx1 = nbrs1.kneighbors(random_p1, return_distance=False).reshape((num_subsampled_points,))
 	gt_mask = torch.zeros(num_points).scatter_(0, torch.tensor(idx1), 1)
@@ -215,7 +215,7 @@ class ClassificationData(Dataset):
 
 
 class RegistrationData(Dataset):
-	def __init__(self, algorithm, data_class=ModelNet40Data(), partial_source=False, partial_template=False, noise=False, half_fragments=False, additional_params={}):
+	def __init__(self, algorithm, data_class=ModelNet40Data(), partial_source=True, partial_template=True, noise=False, half_fragments=True, additional_params={}):
 		super(RegistrationData, self).__init__()
 		available_algorithms = ['PCRNet', 'PointNetLK', 'DCP', 'PRNet', 'iPCRNet', 'RPMNet', 'DeepGMR']
 		if algorithm in available_algorithms: self.algorithm = algorithm
@@ -229,6 +229,9 @@ class RegistrationData(Dataset):
 		self.use_rri = False
 		self.half_fragments = half_fragments
 
+		if self.half_fragments:
+			print("We are using half fragments of ModelNet40")
+
 		if self.algorithm == 'PCRNet' or self.algorithm == 'iPCRNet':
 			from .. ops.transform_functions import PCRNetTransform
 			self.transforms = PCRNetTransform(len(data_class), angle_range=45, translation_range=1)
@@ -240,7 +243,7 @@ class RegistrationData(Dataset):
 			self.transforms = RPMNetTransform(0.8, True)
 		if self.algorithm == 'DCP' or self.algorithm == 'PRNet':
 			from .. ops.transform_functions import DCPTransform
-			self.transforms = DCPTransform(angle_range=45, translation_range=1)
+			self.transforms = DCPTransform(angle_range=45, translation_range=1)   ############################################################################
 		if self.algorithm == 'DeepGMR':
 			self.get_rri = get_rri_cuda if torch.cuda.is_available() else get_rri
 			from .. ops.transform_functions import DeepGMRTransform
@@ -427,6 +430,58 @@ class SyntheticFragments(Dataset):
 
 		return template, source, igt
 
+
+class StanfordFragments(Dataset):
+	def __init__(self, algorithm, number_of_points=512, partial=True, additional_params={}):
+		super(StanfordFragments, self).__init__()
+		available_algorithms = ['PRNet']
+		if algorithm in available_algorithms:
+			self.algorithm = algorithm
+		else:
+			raise Exception("Algorithm not available for registration.")
+
+		dataset_path = "/home/cracee/Documents/Optonic_Project/OptonicsObjectReconstruction/data/stanford"
+		print("THIS IS STANFORD")
+		self.additional_params = additional_params
+		self._data = self._read_folder(dataset_path)
+		self.dataset_path = dataset_path
+		self.use_rri = False
+		self.partial = partial
+		self.number_of_points = number_of_points
+		if self.algorithm == 'PRNet':
+			from ..ops.transform_functions import DCPTransform
+			self.transforms = DCPTransform(angle_range=90, translation_range=1)       ####################################################################
+
+	def __len__(self):
+		return len(self._data)
+
+	def _read_folder(self, folder_name):
+		onlyfiles = [f for f in os.listdir(folder_name) if isfile(join(folder_name, f))]
+		all_files = []
+		for item in onlyfiles:
+			for i in range(8):
+				all_files.append(item)
+
+		return all_files
+
+	def __getitem__(self, index):
+		data_path = self._data[index]
+		meta_path = self.dataset_path + "/" + data_path
+
+		numpy_pcd, numpy_pcd2 = generate_pointcloud(meta_path, self.number_of_points * 2, resampled=True)
+		self.transforms.index = index  # for fixed transformations in PCRNet.
+		numpy_pcd2 = self.transforms(numpy_pcd2)
+
+		# downsampling step
+		if self.partial:
+			source, self.source_mask = farthest_subsample_points(numpy_pcd, num_subsampled_points=self.number_of_points)
+			template, self.template_mask = farthest_subsample_points(numpy_pcd2, num_subsampled_points=self.number_of_points)
+
+		igt = self.transforms.igt
+		#template = torch.from_numpy(template).float()
+		source = torch.from_numpy(source).float()
+
+		return template, source, igt
 
 class SegmentationData(Dataset):
 	def __init__(self):

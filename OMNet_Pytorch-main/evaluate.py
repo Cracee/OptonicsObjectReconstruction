@@ -48,7 +48,7 @@ def test(model, manager):
                 # compute model output
                 output_batch = model(data_batch)
 
-                visualize_result(output_batch, data_batch)
+                #visualize_result(output_batch, data_batch)
 
                 # real batch size
                 batch_size = data_batch["points_src"].size()[0]
@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
     # Load the parameters
     args = parser.parse_args()
-    json_path = os.path.join(args.model_dir, "params_optonic.json")
+    json_path = os.path.join(args.model_dir, "params_op_synt.json")
     assert os.path.isfile(json_path), "No json configuration file found at {}".format(
         json_path
     )

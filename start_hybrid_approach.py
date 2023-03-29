@@ -21,7 +21,9 @@ def start_hybrid():
 
     # prep_ICP
 
-    icp(A, B, max_iterations=2000000)
+    test_function(get_pred_result_prnet.predict, (prnet_args, prnet, dataloader))
+
+    #icp(A, B, max_iterations=2000000)
 
 
 if __name__ == "__main__":

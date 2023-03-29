@@ -367,7 +367,7 @@ class PRNet(nn.Module):
         return src, tgt, scores
 
     def forward(self, *input):
-        calculate_loss = False
+        calculate_loss = True
         get_gpu_status("Yeah, we are starting the forward pass")
         if len(input) == 2:
             src, tgt = input[0], input[1]
@@ -422,7 +422,8 @@ class PRNet(nn.Module):
                 scale_consensus_loss = 0
                 total_feature_alignment_loss += feature_alignment_loss
                 total_cycle_consistency_loss += cycle_consistency_loss
-                total_loss = total_loss + loss + feature_alignment_loss + cycle_consistency_loss + scale_consensus_loss
+                #total_loss = total_loss + loss + feature_alignment_loss + cycle_consistency_loss + scale_consensus_loss
+                total_loss = total_loss + loss
 
             get_gpu_status("After the loss")
             scores.append(score)
@@ -431,6 +432,7 @@ class PRNet(nn.Module):
             else:
                 src = transform.transform_point_cloud(src, rotation_ab_pred_i, translation_ab_pred_i)
 
+        total_loss = loss
         if self.input_shape == 'bnc':
             src, tgt = src.permute(0, 2, 1), tgt.permute(0, 2, 1)
             

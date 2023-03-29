@@ -242,3 +242,35 @@ def icp(src_tm, dst_tm, init_pose=None, max_iterations=20, tolerance=None, sampl
     print()
 
     return T, MeanError
+
+
+def icp_with_DL(model_predict_func, params, init_pose=None, max_iterations=20, tolerance=None, samplerate=1):
+    prnet_args, prnet, dataloader = params
+    result = model_predict_func(prnet_args, prnet, dataloader)
+
+    for i in range(max_iterations):
+
+        pcd_A, pcd_B = model_predict_func(prnet_args, prnet, dataloader)
+
+        src_pts, dst_pts, src_pt_normals, dst_pt_normals = pcd_to_numpy(pcd_A, pcd_B)
+
+        # compute the transformation between the current source and nearest destination points
+        T, _, _ = best_fit_transform_point2plane(matched_src_pts, matched_dst_pts, matched_dst_pt_normals)
+
+        # update the current source
+        src = np.dot(T, src)
+
+
+def pcd_to_numpy(src_tm, dst_tm):
+    # from point cloud to numpy
+    src_pts = np.asarray(src_tm.points)
+    dst_pts = np.asarray(dst_tm.points)
+    src_tm.estimate_normals(
+        o3d.geometry.KDTreeSearchParamHybrid(radius=RADIUS_NORMAL, max_nn=30)
+    )
+    dst_tm.estimate_normals(
+        o3d.geometry.KDTreeSearchParamHybrid(radius=RADIUS_NORMAL, max_nn=30)
+    )
+    src_pt_normals = np.asarray(src_tm.normals)[:]
+    dst_pt_normals = np.asarray(dst_tm.normals)[:]
+    return src_pts, dst_pts, src_pt_normals, dst_pt_normals
