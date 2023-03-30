@@ -17,11 +17,9 @@ def start_hybrid():
 
     prnet_args, prnet, dataloader = get_pred_result_prnet.preprocess()
 
-    A, B = get_pred_result_prnet.predict(prnet_args, prnet, dataloader)
-
     # prep_ICP
 
-    test_function(get_pred_result_prnet.predict, (prnet_args, prnet, dataloader))
+    icp_with_DL(get_pred_result_prnet.predict, (prnet_args, prnet, dataloader))
 
     #icp(A, B, max_iterations=2000000)
 
