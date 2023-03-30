@@ -4,6 +4,9 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 import transformations as transform
 import open3d as o3d
+import torch
+import torch.nn as nn
+from tqdm import tqdm
 
 RADIUS_NORMAL = 0.1
 
@@ -246,19 +249,62 @@ def icp(src_tm, dst_tm, init_pose=None, max_iterations=20, tolerance=None, sampl
 
 def icp_with_DL(model_predict_func, params, init_pose=None, max_iterations=20, tolerance=None, samplerate=1):
     prnet_args, prnet, dataloader = params
-    result = model_predict_func(prnet_args, prnet, dataloader)
+    device = prnet_args.device
 
-    for i in range(max_iterations):
+    src, target, source_full, target_full, R_ab, translation_ab = model_predict_func(prnet_args, prnet, dataloader)
+    src, target, _, _ = pcd_to_numpy(src, target)
+    overall_mse = []
 
-        pcd_A, pcd_B = model_predict_func(prnet_args, prnet, dataloader)
+    R_ab = R_ab[0].detach().cpu().numpy()
+    translation_ab = translation_ab[0].detach().cpu().numpy()
 
-        src_pts, dst_pts, src_pt_normals, dst_pt_normals = pcd_to_numpy(pcd_A, pcd_B)
+    M_gt = np.vstack((np.hstack((R_ab, translation_ab[:, None])), [0, 0, 0, 1]))
 
-        # compute the transformation between the current source and nearest destination points
-        T, _, _ = best_fit_transform_point2plane(matched_src_pts, matched_dst_pts, matched_dst_pt_normals)
+    for o, data in enumerate(tqdm(dataloader)):
+        template, source, igt = data
 
-        # update the current source
-        src = np.dot(T, src)
+        src_og = source[0].detach().cpu().numpy().copy()
+        tar_og = template[0].detach().cpu().numpy().copy()
+
+        transformations = get_transformations(igt)
+        transformations = [t.to(device) for t in transformations]
+        R_ab, translation_ab, R_ba, translation_ba = transformations
+        translation_ab = translation_ab.permute(0, 2, 1)
+
+        R_ab = R_ab[0].detach().cpu().numpy()
+        translation_ab = translation_ab[0].detach().cpu().numpy()[0]
+
+        M_gt = np.vstack((np.hstack((R_ab, translation_ab[:, None])), [0, 0, 0, 1]))
+
+        source = src_og
+        target = tar_og
+
+        for i in range(max_iterations):
+            src = source.copy()
+            src, target = model_matching_prediction(prnet, src, target, device)
+
+            src, target, src_pt_normals, matched_dst_pt_normals = pcd_to_numpy(src, target)
+
+            src_4 = np.ones((4, 512))
+            src_4[:3, :] = np.copy(source.T)
+
+            # compute the transformation between the current source and nearest destination points
+            T, _, _ = best_fit_transform_point2plane(src, target, matched_dst_pt_normals)
+
+            # update the current source
+            src_4 = np.dot(T, src_4)
+            source = src_4.T[:, :3]
+
+            mse = numpy_MSE_loss(T, M_gt)
+
+            #print('\ricp iteration: %d/%d  %s...' % (i + 1, max_iterations, str(mse)), end='', flush=True)
+        overall_mse.append(mse)
+        if o % 25 == 0:
+            the_MSE = sum(overall_mse) / len(overall_mse)
+            print("Overall MSE %s" % the_MSE)
+        #display_result(source, tar_og)
+    the_MSE = sum(overall_mse) / len(overall_mse)
+    print("Overall MSE %s" % the_MSE)
 
 
 def pcd_to_numpy(src_tm, dst_tm):
@@ -274,3 +320,65 @@ def pcd_to_numpy(src_tm, dst_tm):
     src_pt_normals = np.asarray(src_tm.normals)[:]
     dst_pt_normals = np.asarray(dst_tm.normals)[:]
     return src_pts, dst_pts, src_pt_normals, dst_pt_normals
+
+
+def numpy_to_tensor(src, temp):
+    src = torch.tensor(src, dtype=torch.float)
+    src = torch.unsqueeze(src, 0)
+    temp = torch.tensor(temp, dtype=torch.float)
+    temp = torch.unsqueeze(temp, 0)
+    return src, temp
+
+
+def numpy_MSE_loss(A, B):
+    mse = (np.square(A - B)).mean(axis=None)
+    return mse
+
+
+def model_matching_prediction(model, source, template, device):
+    source, template = numpy_to_tensor(source, template)
+
+    template = template.to(device)
+    source = source.to(device)
+    extra_data = model.predict_keypoint_correspondence(template, source)
+
+    extra_source, extra_target, extra_scores = extra_data
+    extra_source = extra_source[0].permute(1, 0)
+    extra_target = extra_target[0].permute(1, 0)
+    extra_source = extra_source.detach().cpu().numpy()
+    extra_target_plus = extra_target.detach().cpu().numpy()
+    extra_target_ = o3d.geometry.PointCloud()
+    extra_source_ = o3d.geometry.PointCloud()
+    extra_target_.points = o3d.utility.Vector3dVector(extra_target_plus)
+    extra_source_.points = o3d.utility.Vector3dVector(extra_source + np.array([0, 0, 0]))
+
+    extra_scores = extra_scores[0].detach().cpu().numpy()
+    length = len(extra_target_plus)
+
+    matching_order_ind = [argmax(extra_scores[i]) for i in range(length)]
+    target_return = extra_target_plus[matching_order_ind]
+    extra_target_.points = o3d.utility.Vector3dVector(target_return)
+
+    return extra_source_, extra_target_
+
+
+def argmax(iterable):
+    return max(enumerate(iterable), key=lambda x: x[1])[0]
+
+
+def display_result(source, target):
+    source_pcd = o3d.geometry.PointCloud()
+    target_pcd = o3d.geometry.PointCloud()
+    source_pcd.points = o3d.utility.Vector3dVector(source)
+    target_pcd.points = o3d.utility.Vector3dVector(target)
+    source_pcd.paint_uniform_color([1, 0, 0])
+    target_pcd.paint_uniform_color([0, 1, 0])
+    o3d.visualization.draw_geometries([source_pcd, target_pcd])
+
+
+def get_transformations(igt):
+    R_ba = igt[:, 0:3, 0:3]  # Ps = R_ba * Pt
+    translation_ba = igt[:, 0:3, 3].unsqueeze(2)  # Ps = Pt + t_ba
+    R_ab = R_ba.permute(0, 2, 1)  # Pt = R_ab * Ps
+    translation_ab = -torch.bmm(R_ab, translation_ba)  # Pt = Ps + t_ab
+    return R_ab, translation_ab, R_ba, translation_ba
