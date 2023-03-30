@@ -130,7 +130,7 @@ def predict(args, model, test_loader):
 
         output = model(template, source, R_ab, translation_ab.squeeze(2))
 
-        extra_data = model.predict_keypoint_correspondence(t1, s1)
+        extra_data = model.predict_keypoint_correspondence(s1, t1)
 
         extra_source, extra_target, extra_scores = extra_data
         extra_source = extra_source[0].permute(1, 0)
@@ -149,7 +149,7 @@ def predict(args, model, test_loader):
         target_return = extra_target_plus[matching_order_ind]
         extra_target_.points = o3d.utility.Vector3dVector(target_return)
 
-        return extra_source_, extra_target_
+        return extra_source_, extra_target_, source, template, R_ab, translation_ab.squeeze(2)
 
 
 def options():
